@@ -121,8 +121,8 @@ int main(int argc, char** argv) {
     if (kEnableRawControlDemo) {
         TRCStickFrame frame = {};
         frame.valid = 1;
-        frame.buttons[buttonStart] = 1;       /// Motion
-        frame.buttons[buttonA]     = 1;       /// Motion + A → Lie Down（内部动作 laying）
+        frame.buttons[buttonBack] = 1;        /// Stand
+        frame.buttons[buttonA]    = 1;        /// Stand + A -> Lie Down（内部动作 laying）
         frame.axes[axesLX]      = 0.0f;
         frame.axes[axesLY]      = 0.0f;
         frame.axes[axesRX]      = 0.0f;
