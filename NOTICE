@@ -1,0 +1,10 @@
+uniubi_robot_sdk
+Copyright 2026 UniUbi
+
+This repository is licensed under the Apache License, Version 2.0, except
+where a file or included artifact states a different license.
+
+Original UniUbi source code, headers, examples, and documentation in this
+repository are made available under Apache-2.0. Precompiled libraries and
+third-party components are subject to their own license terms. See
+THIRD_PARTY_NOTICES.md for component-specific notices.
