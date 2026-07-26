@@ -49,6 +49,8 @@ export LD_LIBRARY_PATH=$PWD/lib/$(uname -m):$LD_LIBRARY_PATH
 
 `example_lowlevel` 会进入低级控制模式，并以 50 Hz 连续发送 60 秒零目标、零增益、零前馈力矩控制帧。该流程用于验证通信和观测闭环，不是平衡站立控制器；仅应在机器人上吊架、急停可触达且场地空旷时运行。
 
+低级客户端提供 `sendMaxTorque(action)` 设置各电机最大扭矩。该接口只在 `kPrepared` 生效，使用 `action.motors[i].header` 定位电机、`action.motors[i].torque` 携带目标上限；它是低频配置接口，不应放入高频 `sendControl` 控制循环。使用该接口时，公开头和 `librobotMotionSdk.so` 必须来自同一套 SDK。完整约束见低级控制接口手册。
+
 媒体帧订阅 demo `example_media_frames` 仅在 `aarch64` 板内本地部署构建和运行；`x86_64` / `i386` 平台不要调用 `createMediaBusClient()`、`setup()` 或 `start*Frame()` 等 media client 接口。运行库包仍需保持同版本、同架构 `.so` 文件成组放置；库查找路径和平台矩阵见 [`uniubi-docs/docs/BUILD.md`](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/BUILD.md)。
 
 ## 集成到 CMake 项目

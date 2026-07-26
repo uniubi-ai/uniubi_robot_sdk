@@ -163,6 +163,11 @@ public:
      * @param cmd 可以为空；动作相关控制帧建议传入并填写 action/acName;
      */
     virtual bool sendControl(const MotorCtrlAction& action,const LowLevelMotionCmd* cmd = nullptr) = 0;
+    /**
+     * @brief 发送最大扭矩设置帧（仅 kPrepared 状态下生效，否则返回 false 并置 lastError）
+     * @param action 电机最大扭矩数据，使用 action.motors[i].torque 表示目标最大扭矩
+     */
+    virtual bool sendMaxTorque(const MotorCtrlAction& action) = 0;
 };
 }
 }
