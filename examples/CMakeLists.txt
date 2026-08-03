@@ -10,7 +10,10 @@ target_link_libraries(example_lowlevel ${UNIUBI_ROBOT_MOTION_SDK_LIB} pthread)
 add_executable(example_highlevel example_highlevel.cpp)
 target_link_libraries(example_highlevel ${UNIUBI_ROBOT_MOTION_SDK_LIB} pthread)
 
-set(UNIUBI_EXAMPLE_TARGETS example_lowlevel example_highlevel)
+add_executable(example_odometry example_odometry.cpp)
+target_link_libraries(example_odometry ${UNIUBI_ROBOT_MOTION_SDK_LIB} pthread)
+
+set(UNIUBI_EXAMPLE_TARGETS example_lowlevel example_highlevel example_odometry)
 
 if(BUILD_SDK_MEDIA_EXAMPLE)
     add_executable(example_media_frames example_media_frames.cpp)

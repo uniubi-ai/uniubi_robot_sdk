@@ -27,6 +27,7 @@
 ├── examples/
 │   ├── example_highlevel.cpp
 │   ├── example_lowlevel.cpp
+│   ├── example_odometry.cpp
 │   └── example_media_frames.cpp
 ```
 
@@ -45,7 +46,22 @@ cmake --build build -j
 export LD_LIBRARY_PATH=$PWD/lib/$(uname -m):$LD_LIBRARY_PATH
 ./build/examples/example_highlevel
 ./build/examples/example_lowlevel
+./build/examples/example_odometry
 ```
+
+## Walk 平面里程计
+
+高级客户端通过独立数据通道 `rt/motion/odometry` 提供 Walk 模型平面里程计：
+
+- `setMotionOdometryCallback(cb)` 必须在 `connect()` 前注册；回调订阅和 `getMotionOdometry()` 只读缓存均不需要 High Level 控制权，也不受 `setObservedEnable()` 控制。
+- `getMotionOdometry(&odom, timeout_ms)` 的 `timeout_ms` 是缓存数据新鲜度窗口，单位为毫秒。
+- `resetMotionOdometry(out, timeout_ms)` 会显式清零里程计并更新 `epoch`，只有已取得 High Level 控制权时才能调用。
+- 里程计仅在 Walk 动作期间有效；从 Walk 切换到其他动作时，设备端会清零累计 `position` / `yaw`、递增 `epoch`，并将 `valid` 置为 `false`。
+- `position[0]` / `position[1]` 是当前 `epoch` 下设备端累计的平面位置；上层直接消费，不要再次积分。`velocity[0]` / `velocity[1]` 是机器人本体系平面速度。
+- `position[2]` 和 `velocity[2]` 是兼容三维结构的保留值，当前固定为 `0`；`valid` 仅表示当前平面里程计帧有效。
+- `yaw` / `yawSpeed` 的单位分别为 rad 和 rad/s，`timestampUs` 是设备单调时钟而非系统时间。
+
+只读用法见 `examples/example_odometry.cpp`。公开头文件与 `librobotMotionSdk.so` 必须来自同一套 SDK；里程计接口需要匹配支持该能力的运行库。
 
 `example_lowlevel` 会进入低级控制模式，并以 50 Hz 连续发送 60 秒零目标、零增益、零前馈力矩控制帧。该流程用于验证通信和观测闭环，不是平衡站立控制器；仅应在机器人上吊架、急停可触达且场地空旷时运行。
 
