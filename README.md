@@ -1,87 +1,113 @@
 # Uniubi Robot SDK
 
-宇泛智能机器狗 C++ 运动控制 SDK，提供高级控制、低级控制和媒体总线能力。本仓库保留源码、头文件、预编译运行库和 C++ examples；完整接口说明统一维护在 [`uniubi-docs`](https://github.com/uniubi-ai/uniubi-docs)。
+Uniubi 机器人 C++ 运动控制 SDK 的公开开发仓库，提供公开头文件、C++ 示例、构建入口和按架构交付的预编译运行库。完整开发路径与 API 说明统一维护在 [`uniubi-docs`](https://github.com/uniubi-ai/uniubi-docs)。
 
-## 目录结构
+## 编译与安装
 
-```
-.
-├── CMakeLists.txt
-├── cmake/
-│   └── toolchain-aarch64-linux-gnu.cmake
-├── include/
-│   └── uniubi/
-│       └── robot_sdk/
-│           ├── MotionSdkService.h
-│           ├── MotionSdkProtocol.h
-│           ├── MotionHighLevelClient.h
-│           ├── MotionLowLevelClient.h
-│           ├── MediaBusClient.h
-│           ├── Media/
-│           ├── Memory/
-│           └── UBase/
-├── lib/
-│   ├── x86_64/
-│   ├── aarch64/
-│   └── i386/
-├── examples/
-│   ├── example_highlevel.cpp
-│   ├── example_lowlevel.cpp
-│   ├── example_odometry.cpp
-│   └── example_media_frames.cpp
-```
+本仓库已经包含预编译的 `librobotMotionSdk.so` 及配套运行库。这里的 CMake 工程用于编译 C++ 示例和验证开发环境，不会重新编译 SDK 运行库。
 
-## 快速开始
+仓库当前不要求执行系统级 `make install`：clone 后可以直接把仓库根目录作为 `UNIUBI_SDK_ROOT`，编译自己的程序，并通过 `LD_LIBRARY_PATH` 加载对应架构的运行库。
+
+### 1. 确定目标架构和构建方式
+
+SDK 架构由**程序最终运行的机器**决定：
+
+| 程序最终运行位置 | 目标架构 | 典型用途 | 可选构建方式 |
+|---|---|---|---|
+| Uniubi 提供的 Orin 开发板 | `aarch64` | Low-level、MediaBus、板内 High-level | 登录 Orin 直接构建，或在 x86_64 Linux 主机交叉编译 |
+| x86_64 Linux 主机 | `x86_64` | 远端 High-level、Mock / 联调工具 | 在该 x86_64 主机上直接构建 |
+| 32 位 x86 Linux 设备 | `i386` | 特定存量系统 | 在目标设备构建，或使用对应交叉工具链 |
+
+如果程序最终运行在 Orin 上，目标架构始终是 `aarch64`。开发者可以选择：
+
+1. 登录 Uniubi 提供的 Orin 开发板，在 Orin 上原生构建；
+2. 在 x86_64 Linux 主机上交叉编译，再将 `aarch64` 产物部署到 Orin。
+
+Low-level 和 MediaBus 是板内能力，但不限制采用原生构建还是交叉编译。
+
+### 2. 准备编译环境
+
+| 项目 | 要求 |
+|---|---|
+| 操作系统 | Linux |
+| glibc | 2.34 或更高 |
+| 编译器 | g++ 9 或更高，支持 C++14 |
+| CMake | 3.18 或更高 |
+
+公开头文件和 `lib/` 下的运行库必须来自同一套 SDK 交付版本，不能跨版本或跨架构混用。
+
+### 3. 获取 SDK
+
+在编译机器上执行：
 
 ```bash
 git clone https://github.com/uniubi-ai/uniubi_robot_sdk.git
 cd uniubi_robot_sdk
+export UNIUBI_SDK_ROOT="$PWD"
+```
+
+### 4. 选择一种编译方式
+
+#### 方式 A：在最终运行机器上直接编译
+
+在 Orin、x86_64 Linux 主机或对应目标设备上执行：
+
+```bash
 cmake -S . -B build
 cmake --build build -j
 ```
 
-运行示例前设置动态库路径：
+CMake 根据当前机器的 `CMAKE_SYSTEM_PROCESSOR` 自动选择运行库：
+
+- Orin：`lib/aarch64/`；
+- x86_64 Linux：`lib/x86_64/`；
+- 32 位 x86：`lib/i386/`。
+
+#### 方式 B：在 x86_64 Linux 主机上为 Orin 交叉编译
+
+安装 `aarch64` 交叉编译器后，使用仓库提供的工具链文件：
 
 ```bash
-export LD_LIBRARY_PATH=$PWD/lib/$(uname -m):$LD_LIBRARY_PATH
-./build/examples/example_highlevel
-./build/examples/example_lowlevel
-./build/examples/example_odometry
+sudo apt install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+
+cmake -S . -B build-aarch64 \
+  -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain-aarch64-linux-gnu.cmake
+cmake --build build-aarch64 -j
 ```
 
-## Walk 平面里程计
+交叉编译产物位于 `build-aarch64/examples/`，需要部署到 Orin 上运行。自定义 sysroot、工具链和安装前缀见 [完整构建指南](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/BUILD.md)。
 
-高级客户端通过独立数据通道 `rt/motion/odometry` 提供 Walk 模型平面里程计：
+### 5. 配置运行库
 
-- `setMotionOdometryCallback(cb)` 必须在 `connect()` 前注册；回调订阅和 `getMotionOdometry()` 只读缓存均不需要 High Level 控制权，也不受 `setObservedEnable()` 控制。
-- `getMotionOdometry(&odom, timeout_ms)` 的 `timeout_ms` 是缓存数据新鲜度窗口，单位为毫秒。
-- `resetMotionOdometry(out, timeout_ms)` 会显式清零里程计并更新 `epoch`，只有已取得 High Level 控制权时才能调用。
-- 里程计仅在 Walk 动作期间有效；从 Walk 切换到其他动作时，设备端会清零累计 `position` / `yaw`、递增 `epoch`，并将 `valid` 置为 `false`。
-- `position[0]` / `position[1]` 是当前 `epoch` 下设备端累计的平面位置；上层直接消费，不要再次积分。`velocity[0]` / `velocity[1]` 是机器人本体系平面速度。
-- `position[2]` 和 `velocity[2]` 是兼容三维结构的保留值，当前固定为 `0`；`valid` 仅表示当前平面里程计帧有效。
-- `yaw` / `yawSpeed` 的单位分别为 rad 和 rad/s，`timestampUs` 是设备单调时钟而非系统时间。
+在最终运行程序的机器上，进入 SDK 仓库根目录并执行：
 
-只读用法见 `examples/example_odometry.cpp`。公开头文件与 `librobotMotionSdk.so` 必须来自同一套 SDK；里程计接口需要匹配支持该能力的运行库。
+```bash
+case "$(uname -m)" in
+  x86_64|amd64) SDK_ARCH=x86_64 ;;
+  aarch64|arm64) SDK_ARCH=aarch64 ;;
+  i386|i486|i586|i686) SDK_ARCH=i386 ;;
+  *) echo "Unsupported architecture: $(uname -m)"; exit 1 ;;
+esac
 
-`example_lowlevel` 会进入低级控制模式，并以 50 Hz 连续发送 60 秒零目标、零增益、零前馈力矩控制帧。该流程用于验证通信和观测闭环，不是平衡站立控制器；仅应在机器人上吊架、急停可触达且场地空旷时运行。
+export UNIUBI_SDK_ROOT="$PWD"
+export LD_LIBRARY_PATH="$UNIUBI_SDK_ROOT/lib/$SDK_ARCH${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+```
 
-低级客户端提供 `sendMaxTorque(action)` 设置各电机最大扭矩。该接口只在 `kPrepared` 生效，使用 `action.motors[i].header` 定位电机、`action.motors[i].torque` 携带目标上限；它是低频配置接口，不应放入高频 `sendControl` 控制循环。使用该接口时，公开头和 `librobotMotionSdk.so` 必须来自同一套 SDK。完整约束见低级控制接口手册。
+直接编译的示例位于 `build/examples/`；交叉编译的示例位于 `build-aarch64/examples/`。`example_media_frames` 仅在 `aarch64` 目标上默认构建。
 
-媒体帧订阅 demo `example_media_frames` 仅在 `aarch64` 板内本地部署构建和运行；`x86_64` / `i386` 平台不要调用 `createMediaBusClient()`、`setup()` 或 `start*Frame()` 等 media client 接口。运行库包仍需保持同版本、同架构 `.so` 文件成组放置；库查找路径和平台矩阵见 [`uniubi-docs/docs/BUILD.md`](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/BUILD.md)。
-
-## 集成到 CMake 项目
+### 6. 集成到自己的 CMake 项目
 
 ```cmake
-set(UNIUBI_SDK_ROOT "$ENV{HOME}/uniubi_robot_sdk" CACHE PATH "Uniubi SDK root")
+set(UNIUBI_SDK_ROOT "$ENV{UNIUBI_SDK_ROOT}" CACHE PATH "Uniubi SDK root")
 
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64|AMD64)$")
   set(ARCH_DIR x86_64)
-elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64)$")
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64|ARM64)$")
   set(ARCH_DIR aarch64)
-elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^(i386|i686|x86)$")
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^(i.86|x86)$")
   set(ARCH_DIR i386)
 else()
-  message(FATAL_ERROR "Unsupported arch: ${CMAKE_SYSTEM_PROCESSOR}")
+  message(FATAL_ERROR "Unsupported architecture: ${CMAKE_SYSTEM_PROCESSOR}")
 endif()
 
 find_library(UNIUBI_MOTION_SDK robotMotionSdk
@@ -91,63 +117,104 @@ find_library(UNIUBI_MOTION_SDK robotMotionSdk
 target_include_directories(my_robot_app PRIVATE
   ${UNIUBI_SDK_ROOT}/include)
 target_link_libraries(my_robot_app PRIVATE ${UNIUBI_MOTION_SDK} pthread)
+
+if(CMAKE_CROSSCOMPILING AND ARCH_DIR STREQUAL "aarch64")
+  get_filename_component(UNIUBI_SDK_LIBRARY_DIR
+    "${UNIUBI_MOTION_SDK}" DIRECTORY)
+  target_link_options(my_robot_app PRIVATE
+    "-Wl,-rpath-link,${UNIUBI_SDK_LIBRARY_DIR}"
+    "-Wl,--allow-shlib-undefined")
+endif()
 ```
 
-## 最小 C++ 示例
+运行时还必须保证同架构、同版本的 `libmediaBus.so`、`libudbus.so`、`libubase.so` 及其配套依赖可以被动态链接器找到。
 
-```cpp
-#include <chrono>
-#include <thread>
-#include "uniubi/robot_sdk/MotionSdkService.h"
-#include "uniubi/robot_sdk/MotionHighLevelClient.h"
+## 选择开发路径
 
-using namespace uniubi::RobotSdk;
+完成编译和运行库配置后，再按开发目标选择 SDK 入口：
 
-int main() {
-    auto service = IMotionSdkService::instance();
-    if (!service->initialService(nullptr, "myApp")) {
-        return 1;
-    }
+| 你要做什么 | 控制模式 | SDK 入口 | 先看哪里 |
+|---|---|---|---|
+| 读取里程计等状态，不控制机器人 | High-level 只读数据 | `MotionHighLevelClient` | [`example_odometry.cpp`](examples/example_odometry.cpp) |
+| 使用机器人内置站立、趴下、行走等动作 | High-level | `MotionHighLevelClient` | [`example_highlevel.cpp`](examples/example_highlevel.cpp) |
+| 自己运行策略，直接控制关节位置或扭矩 | Low-level | `MotionLowLevelClient` | [`example_lowlevel.cpp`](examples/example_lowlevel.cpp) |
+| 订阅摄像头、麦克风或编码帧 | MediaBus | `MediaBusClient` | [`example_media_frames.cpp`](examples/example_media_frames.cpp) |
 
-    auto client = IMotionHighLevelClient::create();
-    if (!client || !client->connect() || !client->startControl(30000)) {
-        service->shutdown();
-        return 1;
-    }
+- **High-level**：应用发送动作或运动意图，由机器人内置能力完成关节级闭环。
+- **Low-level**：应用自己运行策略或控制器，并周期性生成关节位置或扭矩控制量。
 
-    const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(30);
-    while (client->getState() != IMotionHighLevelClient::kControlled) {
-        if (std::chrono::steady_clock::now() >= deadline) {
-            client->disconnect();
-            service->shutdown();
-            return 1;
-        }
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
-    }
+如果还没有确定控制模式，先阅读 [`uniubi-docs` Quick Start](https://github.com/uniubi-ai/uniubi-docs#quick-start)。
 
-    client->standUp();
-    std::this_thread::sleep_for(std::chrono::seconds(5));
-    client->lieDown();
-    std::this_thread::sleep_for(std::chrono::seconds(5));
+## 能力与部署边界
 
-    client->releaseControl();
-    client->disconnect();
-    service->shutdown();
-    return 0;
-}
+| 能力 | 板内单设备 | 远端 / 多设备 | 关键限制 |
+|---|---:|---:|---|
+| High-level 控制与观测 | 支持 | 支持 | 远端模式需要选择网卡并使用设备 SN 创建 client |
+| Low-level 关节控制 | 支持 | 不支持 | 直连本地 MotionServer，数据面使用 SHM |
+| MediaBus 帧订阅 | 仅 `aarch64` | 不支持 | 依赖板内媒体服务、配置和 SHM |
+
+仓库中的 High-level 和里程计示例按板内单设备流程编写。远端 / 多设备应用需要先发现设备，再用目标设备 SN 创建 client，详见 [High-level SDK API](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/uniubi_high_level_sdk.md)。
+
+## 运行示例
+
+以下命令以目标机器直接编译生成的 `build/` 目录为例。交叉编译时，应将 `build-aarch64/examples/` 中的程序部署到 Orin，并确保 Orin 使用同一套 `lib/aarch64/` 运行库。
+
+### 只读验证
+
+`example_odometry` 不申请运动控制权，也不下发动作：
+
+```bash
+./build/examples/example_odometry
 ```
 
-## 文档
+里程计只在机器人处于 Walk 动作期间有效。`position` 已由设备端累计，上层不要再次积分。
 
-- 本仓运行注意事项：[`docs/runtime_notes.md`](docs/runtime_notes.md)
-- 文档总站：[`uniubi-docs`](https://github.com/uniubi-ai/uniubi-docs)
-- 构建与部署：[`docs/BUILD.md`](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/BUILD.md)
-- 高级控制：[`docs/uniubi_high_level_sdk.md`](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/uniubi_high_level_sdk.md)
-- 低级控制：[`docs/uniubi_low_level_sdk.md`](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/uniubi_low_level_sdk.md)
-- 媒体总线：[`docs/uniubi_media_sdk.md`](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/uniubi_media_sdk.md)
-- DDS / ROS 2 直连接入：[`docs/uniubi_robot_dds_api.md`](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/uniubi_robot_dds_api.md)
+### High-level 控制验证
 
-首次真实机器人联调建议只执行 `standUp()` / `lieDown()`。`walking`、`move`、`bipedStand`、`handstand`、`jump*`、`damp` 等高风险运动动作应在空旷场地和人工接管条件下执行。
+`example_highlevel` 是综合能力示例，会获取控制权并执行站立、趴下、音频和观测流程，不是只读程序。首次实机运行前必须确保场地空旷、急停可触达并有人值守：
+
+```bash
+./build/examples/example_highlevel
+```
+
+如果默认网卡不是 `eth0`，将网卡名作为第一个参数传入。当前示例按板内单设备流程运行；远端 / 多设备开发请先阅读 High-level API 中的设备发现流程。
+
+### Low-level 关节控制验证
+
+`example_lowlevel` 会切换到 Low-level 大脑运控，并以 50 Hz 连续发送 60 秒关节控制帧。零目标、零增益和零前馈力矩只用于通信与观测闭环验证，不是平衡站立控制器。
+
+只有在机器人上吊架、急停可触达、场地空旷且有人值守时才可运行：
+
+```bash
+./build/examples/example_lowlevel
+```
+
+`disconnect()` 只断开 Low-level 会话，不会自动切回小脑。开发者需要恢复机器人内置运控能力时，再按需调用 `restoreMotionControlMode()`；接口状态要求见 [Low-level SDK API](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/uniubi_low_level_sdk.md)。
+
+### MediaBus 验证
+
+`example_media_frames` 仅用于 `aarch64` 板内本地媒体帧订阅。运行前需要确认 `/etc/robot/sdk_config.json`、媒体服务和 SHM 环境已经就绪，具体参数和排查方法见 [运行注意事项](docs/runtime_notes.md)。
+
+## 示例索引
+
+| 示例 | 是否申请控制权 | 是否可能引发运动 | 用途 |
+|---|---:|---:|---|
+| `example_odometry` | 否 | 否 | 读取 Walk 平面里程计 |
+| `example_highlevel` | 是 | 是 | High-level 动作、音频和观测综合示例 |
+| `example_lowlevel` | SDK 自动管理 Low-level 会话 | 是 | 关节控制与观测闭环验证 |
+| `example_media_frames` | 否 | 否 | 板内音视频帧订阅和落盘 |
+
+## 文档导航
+
+- [SDK 运行注意事项](docs/runtime_notes.md)
+- [`uniubi-docs` 开发入口](https://github.com/uniubi-ai/uniubi-docs)
+- [构建、安装和交叉编译](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/BUILD.md)
+- [High-level SDK API](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/uniubi_high_level_sdk.md)
+- [Low-level SDK API](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/uniubi_low_level_sdk.md)
+- [Media SDK API](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/uniubi_media_sdk.md)
+- [控制权与仲裁](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/core-concepts/control-ownership.md)
+
+DDS / ROS 2 协议直连属于 Advanced 集成路径，不是普通 C++ SDK 开发入口；需要时从 [`uniubi-docs` Advanced](https://github.com/uniubi-ai/uniubi-docs/tree/main/docs/advanced) 进入。
 
 ## 许可证
 

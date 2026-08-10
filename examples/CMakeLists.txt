@@ -25,4 +25,18 @@ if(BUILD_SDK_MEDIA_EXAMPLE)
     list(APPEND UNIUBI_EXAMPLE_TARGETS example_media_frames)
 endif()
 
+# The prebuilt aarch64 SDK depends on libraries that are resolved on the Orin
+# target (CUDA/Jetson runtime) and on sibling libraries in the SDK package.
+# During cross-linking, search the selected SDK library directory for DT_NEEDED
+# dependencies and leave target-only shared-library symbols for runtime loading.
+if(CMAKE_CROSSCOMPILING AND UNIUBI_SDK_ARCH_DIR STREQUAL "aarch64")
+    get_filename_component(UNIUBI_SDK_LIBRARY_DIR
+        "${UNIUBI_ROBOT_MOTION_SDK_LIB}" DIRECTORY)
+    foreach(example_target IN LISTS UNIUBI_EXAMPLE_TARGETS)
+        target_link_options(${example_target} PRIVATE
+            "-Wl,-rpath-link,${UNIUBI_SDK_LIBRARY_DIR}"
+            "-Wl,--allow-shlib-undefined")
+    endforeach()
+endif()
+
 install(TARGETS ${UNIUBI_EXAMPLE_TARGETS} RUNTIME DESTINATION bin)

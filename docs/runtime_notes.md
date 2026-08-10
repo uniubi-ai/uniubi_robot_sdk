@@ -2,7 +2,7 @@
 
 本文记录 C++ SDK 接入时容易踩坑的运行行为。完整接口说明统一维护在 [uniubi-docs](https://github.com/uniubi-ai/uniubi-docs)。
 
-## HighLevel 动作是异步的
+## High-level 动作是异步的
 
 `startAction()`、`standUp()`、`lieDown()` 返回成功，只代表机器人已接受请求，不代表真实姿态已经到位。
 
@@ -26,20 +26,22 @@
 3. 只在目标 `id` 出现后再播放。
 4. 删除前先停止播放。
 
-## LowLevel restore 前要确认观测闭环
+## 按需恢复小脑运控前要确认观测闭环
 
-C++ 接口为 `sendControl(action, cmd = nullptr)`。动作相关控制帧建议传入 `LowLevelMotionCmd`，并同时填写动作 id 和动作名，例如站立使用 `action = 1`、`acName = "standing"`，便于服务端内部理解和外部观测。
+`restoreMotionControlMode()` 用于在开发者需要恢复机器人内置运控能力时，显式将运控主控切回默认的小脑模式。该接口不是每次 `disconnect()` 前的强制步骤；`disconnect()` 也不会自动执行这次切换。
 
-`sendControl()` 返回 `true` 只代表控制帧已提交。恢复默认运控模式前，需要通过观测确认机器人已经到达安全姿态：
+C++ 控制接口为 `sendControl(action, cmd = nullptr)`。动作相关控制帧建议传入 `LowLevelMotionCmd`，并同时填写动作 id 和动作名，例如站立使用 `action = 1`、`acName = "standing"`，便于服务端内部理解和外部观测。
+
+`sendControl()` 返回 `true` 只代表控制帧已提交。如果应用决定恢复小脑运控，需要先通过观测确认机器人已经到达安全姿态：
 
 1. 将机器人控制到预期安全姿态，通常是 laying。
 2. 持续调用 `getLatestObservation()`，确认关节位置接近目标姿态。
-3. 调用 `setMotionEnable(false)`。
-4. 调用 `restoreMotionControlMode()`。
+3. 调用 `setMotionEnable(false)`，等待状态回到 `kConnected`。
+4. 调用 `restoreMotionControlMode()` 并检查返回值。
 
 跳过观测检查，可能会在机器人仍处于过渡姿态时交回控制权。
 
-## LowLevel 最大扭矩设置是低频配置
+## Low-level 最大扭矩设置是低频配置
 
 `sendMaxTorque(action)` 仅在 `kPrepared` 状态下生效。`action.motorNum` 必须在 `[1, kLowLevelMaxMotorNum]` 范围内；每个元素使用 `header.limbNo` / `header.jointNo` 定位电机，并使用 `torque` 表示目标最大扭矩（N·m）。建议基于 `getMotorLayout()` 返回的布局构造完整配置。
 
@@ -132,4 +134,4 @@ C++ 接口为 `sendControl(action, cmd = nullptr)`。动作相关控制帧建议
 
 运行库必须使用同一交付版本、同一目标架构的一组文件。`librobotMotionSdk.so` 和 `libmediaBus.so` 直接依赖 `libudbus.so` 与 `libubase.so`，四者不能跨版本混用；DDS 库和 iceoryx 库也必须与交付包匹配，否则可能表现为服务超时、初始化失败或订阅无帧。
 
-板内 LowLevel 和 MediaBus 链路依赖共享内存运行环境。如果进程报告没有可写的 iceoryx/RouDi SHM segment，应修正目标设备的运行账号权限或使用设备支持的开发者运行模式，不要通过随意修改系统文件权限来制造“通过”。
+板内 Low-level 和 MediaBus 链路依赖共享内存运行环境。如果进程报告没有可写的 iceoryx/RouDi SHM segment，应修正目标设备的运行账号权限或使用设备支持的开发者运行模式，不要通过随意修改系统文件权限来制造“通过”。
