@@ -296,6 +296,22 @@ struct LowLevelMotionObserved {
 };
 static_assert(sizeof(LowLevelMotionObserved) == 710, "LowLevelMotionObserved size invalid");
 
+/**
+ * @brief Walk 模型平面里程计状态；position/yaw 以本次 epoch 的原点为基准。
+ * @note position[2]/velocity[2] 为兼容三维消息结构保留，当前固定为 0，不代表垂直估计。
+ * @note timestampUs 为设备单调时钟；epoch 在自动/显式清零时递增。
+ */
+struct MotionOdometry {
+    float                  position[3] = {};    /**< [世界系累计X,世界系累计Y,保留0],m */
+    float                  velocity[3] = {};    /**< [本体系预测Vx,本体系预测Vy,保留0],m/s */
+    float                  yaw = 0.0f;          /**< 累计偏航角,rad */
+    float                  yawSpeed = 0.0f;     /**< 偏航角速度,rad/s */
+    uint64_t               timestampUs = 0;     /**< 设备单调时间戳,us */
+    uint32_t               epoch = 0;           /**< 原点代次 */
+    uint8_t                valid = 0;           /**< 当前帧是否完成有效积分 */
+};
+static_assert(sizeof(MotionOdometry) == 45, "MotionOdometry size invalid");
+
 #pragma pack(pop)
 
 static_assert(std::is_standard_layout<LowLevelMotionObserved>::value, "LowLevelMotionObserved must be standard layout");
@@ -305,6 +321,8 @@ static_assert(std::is_standard_layout<MotorCtrlAction>::value, "MotorCtrlAction 
 static_assert(std::is_trivially_copyable<MotorCtrlAction>::value, "MotorCtrlAction must be trivially copyable");
 static_assert(std::is_standard_layout<SensorObserved>::value, "MotionSensorObserved must be standard layout");
 static_assert(std::is_trivially_copyable<SensorObserved>::value, "MotionSensorObserved must be trivially copyable");
+static_assert(std::is_standard_layout<MotionOdometry>::value, "MotionOdometry must be standard layout");
+static_assert(std::is_trivially_copyable<MotionOdometry>::value, "MotionOdometry must be trivially copyable");
 
 } // namespace RobotSdk
 } // namespace uniubi
