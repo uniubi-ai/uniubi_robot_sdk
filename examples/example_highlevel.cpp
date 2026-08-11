@@ -67,6 +67,15 @@ int main(int argc, char** argv) {
     /// 注册回调 —— 必须在 connect 之前
     client->setConnectCallback(&onConnect);
     client->setEventCallback(&onEvent);
+    client->setMotionObservedCallback([](const LowLevelMotionObserved& obs) {
+        printf("[obs] motorNum=%u imuTemp=%.1f power=%.1f%%\n",
+               obs.motorNum, obs.imu.temp, obs.power.power);
+    });
+    client->setSensorObservedCallback([](const SensorObserved& sensor) {
+        printf("[sensor] gps=%u odom=%u epoch=%u x=%.3f y=%.3f yaw=%.3f\n",
+               sensor.gps.valid, sensor.odom.valid, sensor.odom.epoch,
+               sensor.odom.position[0], sensor.odom.position[1], sensor.odom.yaw);
+    });
 
     /// 1) 连接（leaseMs<=0 时 SDK 默认 60s；host proxy 按 [5s,5min] clamp）
     if (!client->connect()) {
@@ -113,25 +122,6 @@ int main(int argc, char** argv) {
     client->lieDown();
     std::this_thread::sleep_for(std::chrono::seconds(5));
 
-    /// 4b) 原始 TRC 控制帧（DDS topic motion/trc，不走 RPC）
-    ///     默认不发送真实原始控制帧；需要动作调试时打开开关，并确认场地、急停和人工接管。
-    ///     前置：host proxy 已 setup mTRCReader 并在 acquire 响应里下发 rawActionId（SDK 持权后自动接收）
-    ///     若服务端 TRC reader 未配置 → SDK 不到 rawActionId → setRawControlCmd 返 false + kActionRejected
-    constexpr bool kEnableRawControlDemo = false;
-    if (kEnableRawControlDemo) {
-        TRCStickFrame frame = {};
-        frame.valid = 1;
-        frame.buttons[buttonBack] = 1;        /// Stand
-        frame.buttons[buttonA]    = 1;        /// Stand + A -> Lie Down（内部动作 laying）
-        frame.axes[axesLX]      = 0.0f;
-        frame.axes[axesLY]      = 0.0f;
-        frame.axes[axesRX]      = 0.0f;
-        frame.axes[axesRY]      = 0.0f;
-        if (!client->setRawControlCmd(frame)) {
-            printf("setRawControlCmd skipped/failed: err=%d\n", client->getLastError());
-        }
-    }
-
     /// 5) 音频播放（启动 → 暂停 → 停止），音频接口直接挂在 client 上
     client->startAudioPlay(R"({"list":[{"id":"1"}],"volume":50,"repeat":1})");
     std::this_thread::sleep_for(std::chrono::seconds(5));
@@ -150,16 +140,8 @@ int main(int argc, char** argv) {
         printf("audio list: %s\n", audioList.c_str());
     }
 
-    /// 7) 观测量上报：开启后运控帧经 setMotionObservedCallback 回调上抛，GPS 经 setGPSCallback；
+    /// 7) 观测量上报：GPS、UWB 和 Walk 里程计统一从 SensorObserved 获取；
     ///    getPowerInfo 的 timeout 是 us 级新鲜度窗口（仅返回此窗口内的最新电源量）
-    client->setMotionObservedCallback([](const LowLevelMotionObserved& obs) {
-        printf("[obs] motorNum=%u imuTemp=%.1f power=%.1f%%\n",
-               obs.motorNum, obs.imu.temp, obs.power.power);
-    });
-    client->setGPSCallback([](const GPSFrame& gps) {
-        printf("[gps] valid=%u point=(%.6f,%.6f) speed=%.2f\n",
-               gps.valid, gps.point.lat, gps.point.lng, gps.speed);
-    });
     std::string observedState;
     client->setObservedEnable(R"({"motionEnable":true,"sensorEnable":true})", observedState);
     printf("[obs] enabled, state=%s\n", observedState.c_str());

@@ -50,15 +50,11 @@ public:
         kInvalidParam,          ///< 入参非法（如动作参数 JSON 解析失败）
     } HighLevelError;
     /**
-     * GPS 数据回调；observed 上报开启后随帧推送
-     */
-    using GPSCallback = std::function<void(const GPSFrame& gps)>;
-    /**
      * 运控观测量回调；observed 上报开启后随帧推送（含 power）
      */
     using MotionObservedCallback = std::function<void(const LowLevelMotionObserved& obs)>;
-    /** Walk 模型里程计回调；connect 后由 rt/motion/odometry 数据面持续推送。 */
-    using MotionOdometryCallback = std::function<void(const MotionOdometry& odometry)>;
+    /** 传感器观测回调；包含 GPS、UWB 和里程计。 */
+    using SensorObservedCallback = std::function<void(const SensorObserved& sensor)>;
     /// 控制权状态变化回调；在 worker 线程中调用，state = 切换后的 HighLevelState
     /// 典型场景：
     /// - 成功获取（startControl）：state=kControlled, error=kNone
@@ -109,9 +105,9 @@ public:
      */
     virtual bool connect(int32_t leaseMs = 0) = 0;
     /**
-     * @brief 注册 GPS 数据回调（observed 上报开启后随帧推送）
+     * @brief 注册完整传感器观测回调（GPS、UWB 和里程计）
      */
-    virtual void setGPSCallback(GPSCallback cb) = 0;
+    virtual void setSensorObservedCallback(SensorObservedCallback cb) = 0;
     /**
      * @brief 注册服务端事件回调（EventBus 派发线程触发）
      *        必须在 connect 之前调用，connect 时会用此回调订阅 RobotServer 的事件 topic：
@@ -141,6 +137,12 @@ public:
      * @return
      */
     virtual bool getPowerInfo(PowerObserved *power, uint32_t timeout) = 0;
+    /**
+     * @brief 获取 SDK 数据面缓存的完整传感器观测，不发 RPC
+     * @param sensor 返回 GPS、UWB 和里程计
+     * @param timeout 数据新鲜度窗口，单位 ms
+     */
+    virtual bool getSensorObservation(SensorObserved* sensor,uint32_t timeout = 5000) = 0;
 public:
     /**
      * @brief 停止播放（必须先 startControl），对应高层 RPC stopPlayList，空参形态
@@ -189,12 +191,6 @@ public:
      * @brief 停止当前动作
      */
     virtual bool stopAction(uint32_t timeout = 5000) = 0;
-    /**
-     * @brief 发送原始控制指令
-     * @param frame  原始控制指令
-     * @return
-     */
-    virtual bool setRawControlCmd(TRCStickFrame &frame) = 0;
     /**
      * @brief 异步请求控制权（立即返回，state 由 worker 推进至 kControlled）
      * @param timeout 拿到控制权的整体截止时间（ms）。worker 在此时间内持续重试 acquireMode；
@@ -299,20 +295,6 @@ public:
      * @note 持续生效直到 stopAction 或后续动作/参数覆盖；仅调速度用 setActionParams 即可，无需重复 move
      */
     virtual bool move(float vx, float vy, float vyaw, uint32_t timeout = 5000) = 0;
-    /**
-     * @brief 清零 Walk 里程计；必须已取得 High Level 控制权
-     * @param out 成功时返回包含新 epoch 的 JSON
-     */
-    virtual bool resetMotionOdometry(std::string& out, uint32_t timeout = 5000) = 0;
-    /**
-     * @brief 获取 SDK 数据面缓存的最新里程计状态，不发 RPC、不要求控制权。
-     * @param timeout 数据新鲜度窗口，单位 ms
-     */
-    virtual bool getMotionOdometry(MotionOdometry* odometry, uint32_t timeout = 5000) = 0;
-    /**
-     * @brief 注册里程计回调；必须在 connect 之前调用，不要求控制权。
-     */
-    virtual void setMotionOdometryCallback(MotionOdometryCallback cb) = 0;
 };
 
 }
