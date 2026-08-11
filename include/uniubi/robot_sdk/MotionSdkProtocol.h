@@ -103,6 +103,7 @@ typedef enum {
     imuControlOffline   = 1 << 6,   ///< IMU 控制板离线
     imuControlNotReady,             ///< 控制板未就绪
     imuControlUpgrade,              ///< 控制板升级中
+    imuBroadPreCharge,              ///< 控制板预充
     imuControlNotParams,            ///< IMU 模组参数未就绪
     imuNotReady,                    ///< IMU 加热 / 未就绪
 } IMUDeviceErrno;
@@ -126,6 +127,7 @@ typedef enum {
     controlMotorNotEnable,          ///< 未使能
     motorControlNotReady,           ///< 控制未就绪
     motorControlUpgrade,            ///< 升级中
+    motorBroadPreCharge,            ///< 预充中
     motorNoCalibrated,              ///< 未标定
     motorURDFNotMapped,             ///< 标定丢失
 } MotorDeviceErrno;
@@ -252,12 +254,28 @@ struct GPSFrame {
 };
 static_assert(sizeof(GPSFrame) == 24, "GPSFrame size invalid");
 
+/**
+ * @brief 平面里程计状态；position/yaw 以本次 epoch 的原点为基准。
+ * @note position[2]/velocity[2] 为兼容三维消息结构保留，当前固定为 0，不代表垂直估计。
+ * @note 再次进入 Walking 时自动建立新原点并递增 epoch
+ */
+struct MotionOdometry {
+    uint32_t               valid = 0;           /**< 当前帧是否完成有效积分 */
+    float                  position[3] = {};    /**< [世界系累计X,世界系累计Y,保留0],m */
+    float                  velocity[3] = {};    /**< [本体系预测Vx,本体系预测Vy,保留0],m/s */
+    float                  yaw = 0.0f;          /**< 累计偏航角,rad */
+    float                  yawSpeed = 0.0f;     /**< 偏航角速度,rad/s */
+    uint32_t               epoch = 0;           /**< 原点代次 */
+};
+static_assert(sizeof(MotionOdometry) == 40, "MotionOdometry size invalid");
+
 struct SensorObserved {
-    GPSFrame         gps;
-    UWBRawObserved   uwb;
+    GPSFrame         gps;                       /**GPS*/
+    UWBRawObserved   uwb;                       /**UWB RAW*/
+    MotionOdometry   odom;                      /**里程计*/
 };
 
-static_assert(sizeof(SensorObserved) == 36, "SensorObserved size invalid");
+static_assert(sizeof(SensorObserved) == 76, "SensorObserved size invalid");
 
 /**
  * @brief 低级运控操作指令
@@ -287,30 +305,16 @@ struct MotorCtrlAction {
 static_assert(sizeof(MotorCtrlAction) == 388, "MotorCtrlAction size invalid");
 
 struct LowLevelMotionObserved {
-    uint8_t                systemSta;
-    uint32_t               motorNum;
-    IMUObserved            imu;
-    TRCStickFrame          trc;
-    PowerObserved          power;
-    MotorObserved          motors[kLowLevelMaxMotorNum];
+    uint8_t                systemSta;                       /// 系统状态
+    uint8_t                standby = true;                  /// 是否运控已经待机
+    uint8_t                setupReady = false;              /// 运控是否准备完成
+    uint32_t               motorNum;                        /// 电机数据
+    IMUObserved            imu;                             /// imu 数据
+    TRCStickFrame          trc;                             /// 手柄数据
+    PowerObserved          power;                           /// 电池数据
+    MotorObserved          motors[kLowLevelMaxMotorNum];    /// 电机数据
 };
-static_assert(sizeof(LowLevelMotionObserved) == 710, "LowLevelMotionObserved size invalid");
-
-/**
- * @brief Walk 模型平面里程计状态；position/yaw 以本次 epoch 的原点为基准。
- * @note position[2]/velocity[2] 为兼容三维消息结构保留，当前固定为 0，不代表垂直估计。
- * @note timestampUs 为设备单调时钟；epoch 在自动/显式清零时递增。
- */
-struct MotionOdometry {
-    float                  position[3] = {};    /**< [世界系累计X,世界系累计Y,保留0],m */
-    float                  velocity[3] = {};    /**< [本体系预测Vx,本体系预测Vy,保留0],m/s */
-    float                  yaw = 0.0f;          /**< 累计偏航角,rad */
-    float                  yawSpeed = 0.0f;     /**< 偏航角速度,rad/s */
-    uint64_t               timestampUs = 0;     /**< 设备单调时间戳,us */
-    uint32_t               epoch = 0;           /**< 原点代次 */
-    uint8_t                valid = 0;           /**< 当前帧是否完成有效积分 */
-};
-static_assert(sizeof(MotionOdometry) == 45, "MotionOdometry size invalid");
+static_assert(sizeof(LowLevelMotionObserved) == 712, "LowLevelMotionObserved size invalid");
 
 #pragma pack(pop)
 
@@ -321,8 +325,6 @@ static_assert(std::is_standard_layout<MotorCtrlAction>::value, "MotorCtrlAction 
 static_assert(std::is_trivially_copyable<MotorCtrlAction>::value, "MotorCtrlAction must be trivially copyable");
 static_assert(std::is_standard_layout<SensorObserved>::value, "MotionSensorObserved must be standard layout");
 static_assert(std::is_trivially_copyable<SensorObserved>::value, "MotionSensorObserved must be trivially copyable");
-static_assert(std::is_standard_layout<MotionOdometry>::value, "MotionOdometry must be standard layout");
-static_assert(std::is_trivially_copyable<MotionOdometry>::value, "MotionOdometry must be trivially copyable");
 
 } // namespace RobotSdk
 } // namespace uniubi
