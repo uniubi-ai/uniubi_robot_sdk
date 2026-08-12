@@ -458,7 +458,7 @@ private:
             << "  status                       query capabilities, system, state and sensor\n"
             << "  capabilities | caps          list supported actions and parameters\n"
             << "  system                       query robot system status\n"
-            << "  state                        query current motion state\n"
+            << "  state                        query active action state; {} means no active action\n"
             << "  motors                       query motor layout\n"
             << "  odom [SECONDS]               print odometry at about 5 Hz (default 5s)\n"
             << "  sensor [SECONDS]             print GPS/UWB/odometry observation\n"

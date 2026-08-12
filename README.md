@@ -184,6 +184,8 @@ endif()
 - **High-level**：应用发送动作或运动意图，由机器人内置能力完成关节级闭环。
 - **Low-level**：应用自己运行策略或控制器，并周期性生成关节位置或扭矩控制量。
 
+`queryMotionState()` 查询的是当前活动 action，不是机器人姿态或电机是否就绪。只有存在活动 action 时，返回对象才包含 `action`、速度等状态字段；没有活动 action 时，调用仍成功，但输出为标准空对象 `{}`。连接或 RPC 失败则返回 `false`，调用方应通过 `getLastError()` 获取原因。
+
 如果还没有确定控制模式，先阅读 [`uniubi-docs` Quick Start](https://github.com/uniubi-ai/uniubi-docs#quick-start)。
 
 ## 能力与部署边界

@@ -6,6 +6,8 @@
 
 `startAction()`、`standUp()`、`lieDown()` 返回成功，只代表机器人已接受请求，不代表真实姿态已经到位。
 
+`queryMotionState()` 只报告当前活动 action。只有存在活动 action 时，返回对象才包含 `action`、速度等字段；没有活动 action 时 RPC 仍然成功，并返回空对象 `{}`。空对象不表示机器人姿态异常，也不表示电机未就绪。RPC 或连接失败时接口返回 `false`，应通过 `getLastError()` 判断错误。
+
 测试收尾或业务退出时，建议使用观测闭环：
 
 1. 调用 `stopAction()`。
