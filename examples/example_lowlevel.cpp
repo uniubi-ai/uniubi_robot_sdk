@@ -1,196 +1,650 @@
 /**
- * ========================================================
- *  @file example_lowlevel.cpp
- *  @brief LowLevel 控制模式示例：回调驱动 + 异步 setMotionEnable
- *  @copyright Copyright (c) 2026 UNIUBI All rights reserved.
- * ========================================================
+ * @file example_lowlevel.cpp
+ * @brief Interactive Low-level SDK CLI for safe position-control demonstrations.
  */
 
-#include <mutex>
+#include <algorithm>
+#include <array>
+#include <atomic>
 #include <chrono>
-#include <thread>
+#include <cmath>
+#include <condition_variable>
+#include <csignal>
 #include <cstdio>
 #include <cstring>
-#include <condition_variable>
-#include "uniubi/robot_sdk/MotionSdkService.h"
+#include <iomanip>
+#include <iostream>
+#include <mutex>
+#include <poll.h>
+#include <sstream>
+#include <stdexcept>
+#include <string>
+#include <thread>
+#include <unistd.h>
+
 #include "uniubi/robot_sdk/MotionLowLevelClient.h"
+#include "uniubi/robot_sdk/MotionSdkService.h"
 
 using namespace uniubi::RobotSdk;
-using LLState = IMotionLowLevelClient::LowLevelState;
-using LLError = IMotionLowLevelClient::LowLevelError;
 
-int main() {
+namespace {
 
-    auto svc = IMotionSdkService::instance();
+using Client = IMotionLowLevelClient;
+using ClientPtr = std::shared_ptr<Client>;
+using LLState = Client::LowLevelState;
+using LLError = Client::LowLevelError;
 
-    if (!svc->initialService(nullptr, "myAppLowLevel")) {
-        fprintf(stderr, "SDK init failed\n");
-        return 1;
+constexpr uint32_t kExpectedMotorCount = 12;
+constexpr uint32_t kControlHz = 50;
+constexpr uint32_t kObservationTimeoutMs = 10;
+constexpr float kPoseDurationSeconds = 2.0f;
+constexpr float kMaxStepRad = 0.25f;
+constexpr float kMaxTrackingErrorRad = 0.25f;
+constexpr float kDampingKd = 2.5f;
+constexpr auto kControlPeriod = std::chrono::milliseconds(1000 / kControlHz);
+
+std::atomic<bool> gStopping{false};
+
+void onSignal(int) {
+    gStopping.store(true);
+}
+
+struct Options {
+    std::string clientId = "uniubi-lowlevel-cli";
+    uint32_t observedHz = 500;
+    uint32_t leaseMs = 60000;
+};
+
+void printUsage(const char* program) {
+    std::cout
+        << "Usage: " << program << " [options]\n"
+        << "  --client-id ID       SDK client id (default: uniubi-lowlevel-cli)\n"
+        << "  --observed-hz HZ     Low-level observation rate (default: 500)\n"
+        << "  --lease-ms MS        control lease in milliseconds (default: 60000)\n"
+        << "  -h, --help           show this help\n\n"
+        << "The program connects without enabling motor control and starts no pose.\n"
+        << "Type 'help' at the lowlevel> prompt.\n";
+}
+
+bool parseUnsigned(const char* value, uint32_t& output) {
+    try {
+        const unsigned long parsed = std::stoul(value);
+        if (parsed == 0 || parsed > 1000000UL) return false;
+        output = static_cast<uint32_t>(parsed);
+        return true;
+    } catch (...) {
+        return false;
     }
+}
 
-    /// 低级控制为板内单设备部署，直接 create()（进程内单例）
-    auto client = IMotionLowLevelClient::create();
-    if (!client) {
-        fprintf(stderr, "create low level client failed\n");
-        svc->shutdown();
-        return 1;
-    }
-
-    /// 回调线程与主线程间用 cv 同步 state 变化通知
-    std::mutex stateMu;
-    std::condition_variable stateCv;
-
-    client->setConnectCallback([&](LLState state, LLError err) {
-        switch (state) {
-            case LLState::kPrepared:
-                printf("[low] prepared (ready for sendControl)\n"); break;
-            case LLState::kConnected:
-                printf("[low] connected (call setMotionEnable to prepare)\n"); break;
-            case LLState::kConnecting:
-                printf("[low] connecting: err=%d\n", static_cast<int>(err)); break;
-            case LLState::kConnectionLost:
-                printf("[low] connection lost (auto-reconnecting): err=%d\n", static_cast<int>(err)); break;
-            case LLState::kDisconnected:
-                printf("[low] disconnected: err=%d\n", static_cast<int>(err)); break;
+bool parseOptions(int argc, char** argv, Options& options) {
+    for (int i = 1; i < argc; ++i) {
+        const std::string arg = argv[i];
+        if (arg == "-h" || arg == "--help") {
+            printUsage(argv[0]);
+            return false;
         }
-        if (err == LLError::kMasterSwitchFailed) {
-            printf("[low] master role switch failed (peer may hold motion), retrying...\n");
+        if (i + 1 >= argc) {
+            std::cerr << "[FAIL] missing value for " << arg << '\n';
+            return false;
         }
-        std::lock_guard<std::mutex> lk(stateMu);
-        stateCv.notify_all();
-    });
+        if (arg == "--client-id") {
+            options.clientId = argv[++i];
+        } else if (arg == "--observed-hz") {
+            if (!parseUnsigned(argv[++i], options.observedHz)) {
+                std::cerr << "[FAIL] invalid --observed-hz\n";
+                return false;
+            }
+        } else if (arg == "--lease-ms") {
+            if (!parseUnsigned(argv[++i], options.leaseMs)) {
+                std::cerr << "[FAIL] invalid --lease-ms\n";
+                return false;
+            }
+        } else {
+            std::cerr << "[FAIL] unknown option: " << arg << '\n';
+            return false;
+        }
+    }
+    return true;
+}
 
-    /// 等到 state 命中 target 或超时；用 cv 等回调通知
-    auto waitStateCb = [&](LLState target, int timeoutMs) -> bool {
-        std::unique_lock<std::mutex> lk(stateMu);
-        return stateCv.wait_for(lk, std::chrono::milliseconds(timeoutMs),
-            [&] { return client->getState() == static_cast<int32_t>(target); });
-    };
-
-    /// connect(observedHz, leaseMs)：leaseMs=0 → server 默认；server 按自身策略 clamp 后下发真实值
-    if (!client->connect(/*observedHz=*/500, /*leaseMs=*/60000)) {
-        printf("connect failed: %d\n", client->getLastError());
-        IMotionSdkService::instance()->shutdown();
-        return 1;
+class LowLevelCli {
+public:
+    explicit LowLevelCli(ClientPtr client) : client_(std::move(client)) {
+        client_->setConnectCallback([this](LLState state, LLError error) {
+            {
+                std::lock_guard<std::mutex> lock(stateMutex_);
+                lastState_ = state;
+                lastError_ = error;
+            }
+            stateChanged_.notify_all();
+        });
     }
 
-    /// 等到 kConnected 才能切 prepare
-    if (!waitStateCb(LLState::kConnected, 10000)) {
-        printf("wait connected timeout\n");
-        client->disconnect();
-        IMotionSdkService::instance()->shutdown();
-        return 1;
+    ~LowLevelCli() {
+        stopController();
     }
 
-    /// 异步请求开启 motion；返回 true 仅表示请求已受理，state 由 SDK 推进至 kPrepared
-    if (!client->setMotionEnable(true)) {
-        printf("setMotionEnable(true) request rejected: %d\n", client->getLastError());
-        client->disconnect();
-        IMotionSdkService::instance()->shutdown();
-        return 1;
+    void connect(uint32_t observedHz, uint32_t leaseMs) {
+        if (!client_->connect(observedHz, leaseMs)) fail("connect");
+        if (!waitForState(LLState::kConnected, std::chrono::seconds(10))) {
+            fail("wait connected");
+        }
+        if (!client_->getMotorLayout(layout_)) fail("get motor layout");
+        layoutSupported_ = validateLayout();
+        needsRestore_ = true;
+        std::cout << "[PASS] connected; motor control is disabled and no pose has started\n";
+        if (!layoutSupported_) {
+            std::cout << "[WARN] pose commands require the standard DV500 12-joint layout\n";
+        }
     }
 
-    /// 等回调把 state 推进到 kPrepared
-    /// motor enable 是异步过程，每个关节上电 + 校验需要几百 ms 到几秒，留充足超时
-    if (!waitStateCb(LLState::kPrepared, 60000)) {
-        printf("wait prepared timeout\n");
-        client->disconnect();
-        IMotionSdkService::instance()->shutdown();
-        return 1;
+    void run() {
+        printHelp();
+        bool running = true;
+        while (!gStopping.load() && running) {
+            std::cout << "lowlevel> " << std::flush;
+            std::string line;
+            while (!gStopping.load()) {
+                pollfd input = {STDIN_FILENO, POLLIN, 0};
+                const int ready = ::poll(&input, 1, 100);
+                if (ready > 0 && (input.revents & (POLLIN | POLLHUP))) {
+                    if (!std::getline(std::cin, line)) running = false;
+                    break;
+                }
+            }
+            if (!running || gStopping.load()) break;
+            running = execute(line);
+        }
     }
 
-    /// 按真实硬件布局构造零力矩控制模板：从 getMotorLayout 拿到电机数 + 每电机 (limbNo, jointNo)
-    MotorLayout layout = {};
-    if (!client->getMotorLayout(layout)) {
-        printf("getMotorLayout failed: %d\n", client->getLastError());
-        client->setMotionEnable(false);
-        client->disconnect();
-        IMotionSdkService::instance()->shutdown();
-        return 1;
-    }
-    printf("[low] motor layout: %u motor(s)\n", layout.motorNum);
-    for (uint32_t i = 0; i < layout.motorNum; ++i) {
-        printf("  motor[%u]: limb=%u joint=%u name=%s\n",
-               i, layout.motors[i].limbNo, layout.motors[i].jointNo, layout.motors[i].name);
-    }
-
-    /// 硬件首跑安全前提：
-    /// - 仅在吊架 / 急停可触达 / 空旷场地条件下运行；
-    /// - 下方零目标、零增益、零前馈力矩只是通信与观测闭环模板，不是平衡站立控制器；
-    /// - 真实闭环控制应从当前观测姿态初始化目标，并使用经过验证的阻尼、增益和力矩策略。
-    MotorCtrlAction action = {};
-    action.motorNum = layout.motorNum;
-    for (uint32_t i = 0; i < layout.motorNum; ++i) {
-        auto& m = action.motors[i];
-        m.position = 0.0f;m.velocity = 0.0f;
-        m.kpGain = 0.0f;m.kdGain = 0.0f;m.torque = 0.0f;
-        m.header.limbNo  = layout.motors[i].limbNo;
-        m.header.jointNo = layout.motors[i].jointNo;
+    void close() {
+        releaseControl();
+        if (needsRestore_ &&
+            client_->getState() == static_cast<int32_t>(LLState::kConnected)) {
+            if (client_->restoreMotionControlMode()) {
+                std::cout << "[PASS] built-in motion control restored\n";
+                needsRestore_ = false;
+            } else {
+                std::cerr << "[WARN] restore motion control failed, error="
+                          << client_->getLastError() << '\n';
+            }
+        }
+        client_->disconnect();
     }
 
-    constexpr int32_t kStandingAction = 1;
-    LowLevelMotionCmd cmd = {};
-    cmd.action = kStandingAction;
-    snprintf(cmd.acName, sizeof(cmd.acName), "%s", "standing");
+private:
+    enum class ControlMode { kDamping, kHold, kTrajectory };
 
-    /// 首次联调建议 50Hz × 60s；长稳态验证可在安全闭环确认后按需要延长
-    /// getLatestObservation 内部已合并 publish 请求 + 等 server 写 + 读 SHM
-    constexpr uint32_t kObsTimeoutMs = 5;                             /// SDK 总等待 5ms（含 server 处理）
-    constexpr auto kCyclePeriod = std::chrono::milliseconds(20);      /// 50Hz
+    bool execute(const std::string& line) {
+        std::istringstream input(line);
+        std::string command;
+        input >> command;
+        if (command.empty()) return true;
 
-    LowLevelMotionObserved obs = {};
-    auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(60);
-    auto nextCycle = std::chrono::steady_clock::now();
-    int obsFailCount = 0;
-    auto obsLastLogAt = std::chrono::steady_clock::now();
-    auto dumpAt = std::chrono::steady_clock::now();
-    while (std::chrono::steady_clock::now() < deadline) {
-        nextCycle += kCyclePeriod;
+        if (command == "help" || command == "?") {
+            printHelp();
+        } else if (command == "status") {
+            printStatus();
+        } else if (command == "motors") {
+            printMotors();
+        } else if (command == "stand") {
+            runPose(false);
+        } else if (command == "lie" || command == "lie-down") {
+            runPose(true);
+        } else if (command == "damping") {
+            activateDamping();
+        } else if (command == "release") {
+            releaseControl();
+        } else if (command == "estop") {
+            requestEmergencyStop();
+        } else if (command == "quit" || command == "exit") {
+            return false;
+        } else {
+            std::cout << "[FAIL] unknown command: " << command << " (use help)\n";
+        }
+        return true;
+    }
 
-        if (!client->getLatestObservation(&obs, kObsTimeoutMs)) {
-            ++obsFailCount;
-            auto now = std::chrono::steady_clock::now();
-            if (now - obsLastLogAt >= std::chrono::seconds(1)) {
-                printf("getLatestObservation failed %d times/1s, state=%d lastErr=%d\n",
-                       obsFailCount, client->getState(), client->getLastError());
-                obsFailCount = 0;
-                obsLastLogAt = now;
+    bool validateLayout() const {
+        if (layout_.motorNum != kExpectedMotorCount) return false;
+        std::array<bool, kExpectedMotorCount> seen{};
+        for (uint32_t i = 0; i < layout_.motorNum; ++i) {
+            const auto& motor = layout_.motors[i];
+            if (motor.limbNo >= 4 || motor.jointNo >= 3) return false;
+            const uint32_t slot = motor.limbNo * 3 + motor.jointNo;
+            if (seen[slot]) return false;
+            seen[slot] = true;
+        }
+        return std::all_of(seen.begin(), seen.end(), [](bool value) { return value; });
+    }
+
+    static int observedIndex(const LowLevelMotionObserved& observation,
+                             uint32_t limb, uint32_t joint) {
+        for (uint32_t i = 0; i < observation.motorNum; ++i) {
+            if (observation.motors[i].header.limbNo == limb &&
+                observation.motors[i].header.jointNo == joint) {
+                return static_cast<int>(i);
+            }
+        }
+        return -1;
+    }
+
+    bool waitForState(LLState target, std::chrono::milliseconds timeout) {
+        const auto deadline = std::chrono::steady_clock::now() + timeout;
+        std::unique_lock<std::mutex> lock(stateMutex_);
+        while (client_->getState() != static_cast<int32_t>(target) &&
+               std::chrono::steady_clock::now() < deadline) {
+            stateChanged_.wait_for(lock, std::chrono::milliseconds(100));
+        }
+        return client_->getState() == static_cast<int32_t>(target);
+    }
+
+    bool prepared() const {
+        return client_->getState() == static_cast<int32_t>(LLState::kPrepared);
+    }
+
+    bool ensureControl() {
+        if (prepared() && controllerRunning_.load()) return true;
+        if (!layoutSupported_) {
+            std::cout << "[FAIL] unsupported motor layout; refusing to enable pose control\n";
+            return false;
+        }
+        stopController();
+        if (!prepared()) {
+            if (!client_->setMotionEnable(true)) {
+                printFailure("enable Low-level control");
+                return false;
+            }
+            if (!waitForState(LLState::kPrepared, std::chrono::seconds(60))) {
+                printFailure("wait Low-level prepared");
+                client_->emergencyStop();
+                client_->setMotionEnable(false);
+                waitForState(LLState::kConnected, std::chrono::seconds(5));
+                return false;
+            }
+        }
+
+        LowLevelMotionObserved observation{};
+        bool observationMatches = client_->getLatestObservation(&observation, 1000) &&
+                                  observation.motorNum == layout_.motorNum;
+        for (uint32_t i = 0; observationMatches && i < layout_.motorNum; ++i) {
+            observationMatches = observedIndex(observation, layout_.motors[i].limbNo,
+                                               layout_.motors[i].jointNo) >= 0;
+        }
+        if (!observationMatches) {
+            client_->setMotionEnable(false);
+            waitForState(LLState::kConnected, std::chrono::seconds(5));
+            printFailure("initial observation");
+            return false;
+        }
+        {
+            std::lock_guard<std::mutex> lock(controlMutex_);
+            latestObservation_ = observation;
+            hasObservation_ = true;
+            mode_ = ControlMode::kDamping;
+            trajectoryDone_ = true;
+        }
+        controllerRunning_.store(true);
+        controllerThread_ = std::thread(&LowLevelCli::controlLoop, this);
+        std::cout << "[PASS] Low-level control enabled in damping mode; no pose has started\n";
+        return true;
+    }
+
+    void releaseControl() {
+        if (!prepared() && !controllerRunning_.load()) return;
+        setDamping();
+        std::this_thread::sleep_for(std::chrono::milliseconds(300));
+        stopController();
+        if (prepared()) {
+            if (!client_->setMotionEnable(false) ||
+                !waitForState(LLState::kConnected, std::chrono::seconds(10))) {
+                printFailure("release Low-level control");
+                if (!client_->emergencyStop()) {
+                    std::cerr << "[WARN] emergency-stop fallback failed, error="
+                              << client_->getLastError() << '\n';
+                }
+                return;
+            }
+        }
+        std::cout << "[PASS] Low-level control released\n";
+    }
+
+    void stopController() {
+        controllerRunning_.store(false);
+        controlChanged_.notify_all();
+        if (controllerThread_.joinable()) controllerThread_.join();
+    }
+
+    void requestEmergencyStop() {
+        stopController();
+        const bool stopped = client_->emergencyStop();
+        if (prepared()) {
+            client_->setMotionEnable(false);
+            waitForState(LLState::kConnected, std::chrono::seconds(5));
+        }
+        result(stopped, "emergency stop requested; controller stopped");
+    }
+
+    void setDamping() {
+        if (!prepared() || !controllerRunning_.load()) {
+            std::cout << "[FAIL] Low-level controller is not running\n";
+            return;
+        }
+        {
+            std::lock_guard<std::mutex> lock(controlMutex_);
+            mode_ = ControlMode::kDamping;
+            trajectoryDone_ = true;
+        }
+        controlChanged_.notify_all();
+        std::cout << "[PASS] damping mode active\n";
+    }
+
+    void activateDamping() {
+        if (!ensureControl()) return;
+        setDamping();
+    }
+
+    void runPose(bool laying) {
+        if (!ensureControl()) return;
+        if (!layoutSupported_) {
+            std::cout << "[FAIL] unsupported motor layout\n";
+            return;
+        }
+
+        {
+            std::lock_guard<std::mutex> lock(controlMutex_);
+            if (!hasObservation_) {
+                std::cout << "[FAIL] no Low-level observation available\n";
+                return;
+            }
+            for (uint32_t i = 0; i < layout_.motorNum; ++i) {
+                const uint32_t limb = layout_.motors[i].limbNo;
+                const uint32_t joint = layout_.motors[i].jointNo;
+                const int observed = observedIndex(latestObservation_, limb, joint);
+                if (observed < 0) {
+                    std::cout << "[FAIL] latest observation does not match motor layout\n";
+                    return;
+                }
+                startPosition_[i] = latestObservation_.motors[observed].position;
+                targetPosition_[i] = posePosition(laying, limb, joint);
+                commandPosition_[i] = startPosition_[i];
+            }
+            poseLaying_ = laying;
+            trajectoryProgress_ = 0.0f;
+            trajectoryDone_ = false;
+            mode_ = ControlMode::kTrajectory;
+        }
+        controlChanged_.notify_all();
+
+        std::unique_lock<std::mutex> lock(controlMutex_);
+        controlChanged_.wait(lock, [&] {
+            return trajectoryDone_ || !controllerRunning_.load() || gStopping.load();
+        });
+        if (trajectoryDone_ && mode_ == ControlMode::kHold) {
+            std::cout << "[PASS] " << (laying ? "lie-down" : "stand")
+                      << " pose reached and held\n";
+        } else if (!gStopping.load()) {
+            std::cout << "[FAIL] pose command interrupted\n";
+        }
+    }
+
+    static float posePosition(bool laying, uint32_t limb, uint32_t joint) {
+        if (!laying) {
+            static constexpr float stand[3] = {0.0f, 0.8f, -1.5f};
+            return stand[joint];
+        }
+        static constexpr float lie[3] = {0.48f, 1.10f, -2.72f};
+        const float value = lie[joint];
+        return (joint == 0 && (limb == 1 || limb == 3)) ? -value : value;
+    }
+
+    static float kpGain(uint32_t limb, uint32_t joint) {
+        if (limb < 2) return 90.0f;
+        return joint == 2 ? 140.0f : 130.0f;
+    }
+
+    static float kdGain(uint32_t limb) {
+        return limb < 2 ? 1.5f : 2.5f;
+    }
+
+    void controlLoop() {
+        auto nextCycle = std::chrono::steady_clock::now();
+        while (controllerRunning_.load() && prepared()) {
+            nextCycle += kControlPeriod;
+            if (gStopping.load()) controlChanged_.notify_all();
+            LowLevelMotionObserved observation{};
+            if (!client_->getLatestObservation(&observation, kObservationTimeoutMs) ||
+                observation.motorNum != layout_.motorNum) {
+                ++observationFailures_;
+                std::this_thread::sleep_until(nextCycle);
+                continue;
+            }
+
+            MotorCtrlAction action{};
+            LowLevelMotionCmd command{};
+            action.motorNum = layout_.motorNum;
+            {
+                std::lock_guard<std::mutex> lock(controlMutex_);
+                latestObservation_ = observation;
+                hasObservation_ = true;
+
+                if (mode_ == ControlMode::kTrajectory) advanceTrajectory(observation);
+                const bool damping = mode_ == ControlMode::kDamping;
+                for (uint32_t i = 0; i < layout_.motorNum; ++i) {
+                    auto& motor = action.motors[i];
+                    const uint32_t limb = layout_.motors[i].limbNo;
+                    const uint32_t joint = layout_.motors[i].jointNo;
+                    const int observed = observedIndex(observation, limb, joint);
+                    if (observed < 0) {
+                        controllerRunning_.store(false);
+                        controlChanged_.notify_all();
+                        return;
+                    }
+                    motor.position = damping ? observation.motors[observed].position
+                                             : commandPosition_[i];
+                    motor.velocity = 0.0f;
+                    motor.kpGain = damping ? 0.0f : kpGain(limb, joint);
+                    motor.kdGain = damping ? kDampingKd : kdGain(limb);
+                    motor.torque = 0.0f;
+                    motor.header.limbNo = limb;
+                    motor.header.jointNo = joint;
+                }
+                if (damping) {
+                    command.action = -1;
+                    std::snprintf(command.acName, sizeof(command.acName), "%s", "damping");
+                } else {
+                    command.action = poseLaying_ ? 0 : 1;
+                    std::snprintf(command.acName, sizeof(command.acName), "%s",
+                                  poseLaying_ ? "laying" : "standing");
+                }
+            }
+
+            if (!client_->sendControl(action, &command)) {
+                std::cerr << "\n[FAIL] sendControl failed, error="
+                          << client_->getLastError() << '\n';
+                controllerRunning_.store(false);
+                controlChanged_.notify_all();
+                break;
             }
             std::this_thread::sleep_until(nextCycle);
-            continue;
         }
-
-        /// 1Hz 打印观测量摘要（IMU / power / 第 0 号电机）
-        auto now = std::chrono::steady_clock::now();
-        if (now - dumpAt >= std::chrono::seconds(1)) {
-            const auto& a = obs.imu.accel; const auto& g = obs.imu.gyro; const auto& q = obs.imu.quaternion;
-            const auto& m0 = obs.motors[0];
-            printf("[obs] imu: temp=%.1f  accel=(%+.2f,%+.2f,%+.2f)  gyro=(%+.3f,%+.3f,%+.3f)  "
-                   "quat=(%.3f,%.3f,%.3f,%.3f)  power=%.2fV  motor[0]: pos=%+.3f vel=%+.3f torq=%+.3f\n",
-                   obs.imu.temp, a.x, a.y, a.z, g.x, g.y, g.z, q.w, q.x, q.y, q.z,
-                   obs.power.chargeVoltage, m0.position, m0.velocity, m0.torque);
-            dumpAt = now;
-        }
-
-        if (!client->sendControl(action, &cmd)) {
-            printf("send_control failed: %d\n", client->getLastError());
-            break;
-        }
-        std::this_thread::sleep_until(nextCycle);
+        controllerRunning_.store(false);
+        controlChanged_.notify_all();
     }
 
-    /// 额外：拉一次传感器观测（gps/uwb），低频即可；timeout 为 us 级新鲜度窗口
-    SensorObserved sensor = {};
-    if (client->getSensorObservation(&sensor, 1000000)) {
-        const auto& gps = sensor.gps;
-        const auto& uwb = sensor.uwb;
-        printf("[sensor] gps valid=%u point=(%.6f,%.6f) speed=%.2f  uwb valid=%u dist=%u azimuth=%u\n",
-               gps.valid, gps.point.lat, gps.point.lng, gps.speed,
-               static_cast<unsigned>(uwb.valid), uwb.distance, static_cast<unsigned>(uwb.azimuth));
+    void advanceTrajectory(const LowLevelMotionObserved& observation) {
+        float maxTrackingError = 0.0f;
+        for (uint32_t i = 0; i < layout_.motorNum; ++i) {
+            const int observed = observedIndex(observation, layout_.motors[i].limbNo,
+                                               layout_.motors[i].jointNo);
+            if (observed < 0) return;
+            maxTrackingError = std::max(maxTrackingError,
+                std::fabs(observation.motors[observed].position - commandPosition_[i]));
+        }
+        if (maxTrackingError > kMaxTrackingErrorRad) return;
+
+        trajectoryProgress_ = std::min(1.0f,
+            trajectoryProgress_ + 1.0f / (kPoseDurationSeconds * kControlHz));
+        const float smooth = trajectoryProgress_ * trajectoryProgress_ *
+                             (3.0f - 2.0f * trajectoryProgress_);
+        bool clamped = false;
+        for (uint32_t i = 0; i < layout_.motorNum; ++i) {
+            const float reference = startPosition_[i] +
+                                    (targetPosition_[i] - startPosition_[i]) * smooth;
+            const float lower = commandPosition_[i] - kMaxStepRad;
+            const float upper = commandPosition_[i] + kMaxStepRad;
+            const float next = std::max(lower, std::min(reference, upper));
+            clamped = clamped || std::fabs(next - reference) > 1e-6f;
+            commandPosition_[i] = next;
+        }
+        if (trajectoryProgress_ >= 1.0f && !clamped) {
+            mode_ = ControlMode::kHold;
+            trajectoryDone_ = true;
+            controlChanged_.notify_all();
+        }
     }
 
-    client->setMotionEnable(false);
-    client->disconnect();
-    IMotionSdkService::instance()->shutdown();
-    return 0;
+    void printStatus() {
+        LowLevelMotionObserved observation{};
+        bool hasObservation = false;
+        {
+            std::lock_guard<std::mutex> lock(controlMutex_);
+            if (hasObservation_) {
+                observation = latestObservation_;
+                hasObservation = true;
+            }
+        }
+        std::cout << "state=" << client_->getState()
+                  << " error=" << client_->getLastError()
+                  << " prepared=" << (prepared() ? "yes" : "no")
+                  << " controller=" << (controllerRunning_.load() ? "running" : "stopped")
+                  << " obs_failures=" << observationFailures_.load() << '\n';
+        if (hasObservation) {
+            std::cout << std::fixed << std::setprecision(3)
+                      << "imu gyro=(" << observation.imu.gyro.x << ','
+                      << observation.imu.gyro.y << ',' << observation.imu.gyro.z
+                      << ") power=" << observation.power.chargeVoltage << "V\n";
+        }
+    }
+
+    void printMotors() {
+        LowLevelMotionObserved observation{};
+        bool hasObservation = false;
+        {
+            std::lock_guard<std::mutex> lock(controlMutex_);
+            if (hasObservation_) {
+                observation = latestObservation_;
+                hasObservation = true;
+            }
+        }
+        std::cout << "motorNum=" << layout_.motorNum << '\n';
+        for (uint32_t i = 0; i < layout_.motorNum; ++i) {
+            const auto& motor = layout_.motors[i];
+            std::cout << "  [" << i << "] limb=" << motor.limbNo
+                      << " joint=" << motor.jointNo << " name=" << motor.name;
+            const int observedIndexValue = hasObservation
+                ? observedIndex(observation, motor.limbNo, motor.jointNo) : -1;
+            if (observedIndexValue >= 0) {
+                const auto& observed = observation.motors[observedIndexValue];
+                std::cout << std::fixed << std::setprecision(3)
+                          << " pos=" << observed.position << " vel=" << observed.velocity
+                          << " enabled=" << static_cast<unsigned>(observed.enable)
+                          << " online=" << static_cast<unsigned>(observed.online)
+                          << " error=" << static_cast<unsigned>(observed.error);
+            }
+            std::cout << '\n';
+        }
+    }
+
+    void result(bool ok, const std::string& success) const {
+        if (ok) std::cout << "[PASS] " << success << '\n';
+        else printFailure(success);
+    }
+
+    void printFailure(const std::string& operation) const {
+        std::cout << "[FAIL] " << operation << ", error="
+                  << client_->getLastError() << '\n';
+    }
+
+    [[noreturn]] void fail(const std::string& operation) const {
+        throw std::runtime_error(operation + " failed, error=" +
+                                 std::to_string(client_->getLastError()));
+    }
+
+    static void printHelp() {
+        std::cout
+            << "Commands:\n"
+            << "  status              show connection, controller and observation summary\n"
+            << "  motors              show the motor layout and latest joint state\n"
+            << "  stand               smoothly move to and hold the standing pose\n"
+            << "  lie | lie-down      smoothly move to and hold the lying pose\n"
+            << "  damping             enable zero stiffness with velocity damping\n"
+            << "  release             damping, stop the controller and disable motor control\n"
+            << "  estop               request emergency stop\n"
+            << "  quit                 release, restore built-in motion control and exit\n\n"
+            << "No pose starts automatically. Pose commands enable Low-level control on demand.\n";
+    }
+
+    ClientPtr client_;
+    MotorLayout layout_{};
+    bool layoutSupported_ = false;
+    bool needsRestore_ = false;
+
+    std::mutex stateMutex_;
+    std::condition_variable stateChanged_;
+    LLState lastState_ = LLState::kDisconnected;
+    LLError lastError_ = LLError::kNone;
+
+    std::atomic<bool> controllerRunning_{false};
+    std::atomic<uint64_t> observationFailures_{0};
+    std::thread controllerThread_;
+    std::mutex controlMutex_;
+    std::condition_variable controlChanged_;
+    ControlMode mode_ = ControlMode::kDamping;
+    LowLevelMotionObserved latestObservation_{};
+    bool hasObservation_ = false;
+    bool poseLaying_ = false;
+    bool trajectoryDone_ = true;
+    float trajectoryProgress_ = 0.0f;
+    std::array<float, kExpectedMotorCount> startPosition_{};
+    std::array<float, kExpectedMotorCount> targetPosition_{};
+    std::array<float, kExpectedMotorCount> commandPosition_{};
+};
+
+}  // namespace
+
+int main(int argc, char** argv) {
+    Options options;
+    if (!parseOptions(argc, argv, options)) {
+        return (argc > 1 && (std::string(argv[1]) == "-h" ||
+                             std::string(argv[1]) == "--help")) ? 0 : 2;
+    }
+
+    std::signal(SIGINT, onSignal);
+    std::signal(SIGTERM, onSignal);
+
+    auto service = IMotionSdkService::instance();
+    if (!service->initialService(nullptr, options.clientId.c_str())) {
+        std::cerr << "[FAIL] SDK init failed\n";
+        return 1;
+    }
+
+    int status = 0;
+    ClientPtr client;
+    try {
+        client = Client::create();
+        if (!client) throw std::runtime_error("create Low-level client failed");
+        LowLevelCli cli(client);
+        cli.connect(options.observedHz, options.leaseMs);
+        cli.run();
+        cli.close();
+    } catch (const std::exception& error) {
+        std::cerr << "[FAIL] " << error.what() << '\n';
+        if (client) client->disconnect();
+        status = 1;
+    }
+
+    service->shutdown();
+    return status;
 }

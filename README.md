@@ -83,6 +83,12 @@ cmake --build build-aarch64 -j
 cmake --install build --prefix "$HOME/.local/uniubi"
 ```
 
+如果是在 x86_64 Linux 主机上为 Orin 交叉编译，则安装对应的交叉编译目录：
+
+```bash
+cmake --install build-aarch64 --prefix "$HOME/.local/uniubi-aarch64"
+```
+
 安装后，业务工程可以直接使用导出的 CMake target：
 
 ```cmake
@@ -91,13 +97,29 @@ target_link_libraries(my_robot_app PRIVATE Uniubi::RobotMotionSdk)
 # MediaBus 应用额外链接 Uniubi::MediaBus
 ```
 
-配置业务工程时通过 `-DCMAKE_PREFIX_PATH=$HOME/.local/uniubi` 指定安装前缀。安装布局为 `include/`、`lib/<arch>/`、`lib/cmake/UniubiRobotSdk/` 和 `bin/`。
+配置业务工程时通过 `-DCMAKE_PREFIX_PATH=$HOME/.local/uniubi` 指定安装前缀。安装布局为 `include/`、`lib/<arch>/`、`lib/cmake/UniubiRobotSdk/` 和 `bin/`。交叉安装目录中的程序和运行库需要一起部署到 Orin，不能在编译主机上运行。
 
 如果只想在源码树内开发，也仍可把仓库根目录直接作为 `UNIUBI_SDK_ROOT`。
 
-### 6. 配置运行库
+### 6. 配置运行库并运行示例
 
-在最终运行程序的机器上，进入 SDK 仓库根目录并执行：
+如果使用了第 5 节的安装方式，在最终运行程序的机器上执行：
+
+```bash
+export UNIUBI_SDK_PREFIX="$HOME/.local/uniubi"
+
+case "$(uname -m)" in
+  x86_64|amd64) SDK_ARCH=x86_64 ;;
+  aarch64|arm64) SDK_ARCH=aarch64 ;;
+  i386|i486|i586|i686) SDK_ARCH=i386 ;;
+  *) echo "Unsupported architecture: $(uname -m)"; exit 1 ;;
+esac
+
+export LD_LIBRARY_PATH="$UNIUBI_SDK_PREFIX/lib/$SDK_ARCH${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+"$UNIUBI_SDK_PREFIX/bin/example_highlevel" --read-only
+```
+
+如果直接从源码树运行，在 SDK 仓库根目录执行：
 
 ```bash
 case "$(uname -m)" in
@@ -109,6 +131,7 @@ esac
 
 export UNIUBI_SDK_ROOT="$PWD"
 export LD_LIBRARY_PATH="$UNIUBI_SDK_ROOT/lib/$SDK_ARCH${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+./build/examples/example_highlevel --read-only
 ```
 
 直接编译的示例位于 `build/examples/`；交叉编译的示例位于 `build-aarch64/examples/`。`example_media_frames` 仅在 `aarch64` 目标上默认构建。
@@ -185,17 +208,15 @@ endif()
 ./build/examples/example_highlevel --read-only
 ```
 
-进入 CLI 后可执行：
+进入 CLI 后会显示 `highlevel>` 提示符，可以先完成只读检查：
 
 ```text
-status
-caps
-system
-state
-motors
-sensor 5
-odom 5
-quit
+highlevel> status
+highlevel> caps
+highlevel> motors
+highlevel> sensor 5
+highlevel> odom 5
+highlevel> quit
 ```
 
 `odom` 已合并到 High-level CLI。里程计只在机器人处于 Walk 动作期间有效；`position` 已由设备端累计，上层不要再次积分。
@@ -208,21 +229,46 @@ quit
 ./build/examples/example_highlevel
 ```
 
-使用 `start ACTION [JSON]` 启动动作，`set JSON` 持续设置动作参数，或用 `send SECONDS JSON` 限时发送参数并自动清零 walking 速度。`stop` 停止当前动作，`release` 释放控制权。
+默认模式连接成功后会自动申请控制权，但不会自动启动动作。`--read-only` 只表示启动时不申请控制权；进入 CLI 后仍可显式执行 `take`。从 `--read-only` 会话显式取权并完成一次限时行走的流程如下：
+
+```text
+highlevel> take
+highlevel> start walking
+highlevel> send 3 {"lineVelocityX":0.3,"lineVelocityY":0,"velocity":0}
+highlevel> stop
+highlevel> release
+highlevel> quit
+```
+
+`start ACTION [JSON]` 启动动作，`set JSON` 持续设置动作参数，`send SECONDS JSON` 限时发送参数并在结束后自动清零 walking 速度。`zero` 只清零 walking 速度、不会结束动作；`stop` 停止当前动作，`release` 释放控制权，`estop` 请求急停。随时输入 `help` 查看程序当前支持的完整命令。
 
 首次实机运行前必须确保场地空旷、急停可触达并有人值守。如果默认网卡不是 `eth0`，使用 `--iface IFACE`；远端 / 多设备模式使用 `--device-id SN`。
 
 ### Low-level 关节控制验证
 
-`example_lowlevel` 会切换到 Low-level 大脑运控，并以 50 Hz 连续发送 60 秒关节控制帧。零目标、零增益和零前馈力矩只用于通信与观测闭环验证，不是平衡站立控制器。
+> **测试前必须将机器狗可靠吊起，使四脚完全腾空，并确保四肢在运动范围内能够自由活动、不会碰到地面、吊架或周围物体；同时保持急停可触达并由专人值守。**
 
-只有在机器人上吊架、急停可触达、场地空旷且有人值守时才可运行：
+`example_lowlevel` 是交互式 Low-level 工具。启动后只建立连接，不使能电机控制，也不会自动执行姿态：
 
 ```bash
 ./build/examples/example_lowlevel
 ```
 
-`disconnect()` 只断开 Low-level 会话，不会自动切回小脑。开发者需要恢复机器人内置运控能力时，再按需调用 `restoreMotionControlMode()`；接口状态要求见 [Low-level SDK API](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/uniubi_low_level_sdk.md)。
+进入 CLI 后先检查状态和电机布局，再执行姿态命令：
+
+```text
+lowlevel> status
+lowlevel> motors
+lowlevel> stand
+lowlevel> lie
+lowlevel> damping
+lowlevel> release
+lowlevel> quit
+```
+
+`stand`、`lie` 和 `damping` 会按需调用 `setMotionEnable(true)`，CLI 不额外包装 High-level 风格的 `take` 命令。`stand` 和 `lie` 从实时关节位置开始，以 50 Hz 在 2 秒内平滑移动到目标姿态并持续保持。`damping` 清零位置刚度并保留速度阻尼，`release` 先进入阻尼再关闭 Low-level 控制，`quit` 还会尝试恢复机器人内置运控。
+
+该示例使用标准 DV500 12 关节布局和板端已验证的姿态参数；布局不匹配时会拒绝使能姿态控制。Low-level 示例测试期间必须始终保持机器狗四脚腾空且能够自由活动，不得直接放在地面执行。接口状态要求见 [Low-level SDK API](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/uniubi_low_level_sdk.md)。
 
 ### MediaBus 验证
 
@@ -234,7 +280,7 @@ quit
 |---|---:|---:|---|
 | `example_highlevel --read-only` | 否 | 否 | High-level 状态、能力、传感器和 Walk 里程计查询 |
 | `example_highlevel` | 是 | 只有显式输入控制命令后才会 | High-level 交互 CLI；保持控制租约并分步测试动作和参数 |
-| `example_lowlevel` | SDK 自动管理 Low-level 会话 | 是 | 关节控制与观测闭环验证 |
+| `example_lowlevel` | 姿态/阻尼命令按需使能 | `stand` / `lie` 会 | Low-level 交互 CLI；状态检查、阻尼和站立/趴下纯位置控制 |
 | `example_media_frames` | 否 | 否 | 板内音视频帧订阅和落盘 |
 
 ## 文档导航
