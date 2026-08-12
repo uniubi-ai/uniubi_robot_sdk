@@ -1,0 +1,63 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+find_dependency(Threads)
+
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64|AMD64)$")
+    set(_UNIUBI_SDK_ARCH_DIR x86_64)
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64|ARM64)$")
+    set(_UNIUBI_SDK_ARCH_DIR aarch64)
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^(i.86|x86)$")
+    set(_UNIUBI_SDK_ARCH_DIR i386)
+else()
+    set(UniubiRobotSdk_FOUND FALSE)
+    set(UniubiRobotSdk_NOT_FOUND_MESSAGE
+        "Unsupported CMAKE_SYSTEM_PROCESSOR='${CMAKE_SYSTEM_PROCESSOR}'")
+    return()
+endif()
+set(UNIUBI_SDK_ARCH_DIR "${_UNIUBI_SDK_ARCH_DIR}")
+
+set_and_check(UniubiRobotSdk_INCLUDE_DIR "${PACKAGE_PREFIX_DIR}/include")
+set_and_check(UniubiRobotSdk_LIBRARY_DIR
+    "${PACKAGE_PREFIX_DIR}/lib/${_UNIUBI_SDK_ARCH_DIR}")
+
+find_library(UniubiRobotSdk_MOTION_LIBRARY
+    NAMES robotMotionSdk
+    PATHS "${UniubiRobotSdk_LIBRARY_DIR}"
+    NO_DEFAULT_PATH
+    NO_CMAKE_FIND_ROOT_PATH)
+if(NOT UniubiRobotSdk_MOTION_LIBRARY)
+    set(UniubiRobotSdk_FOUND FALSE)
+    set(UniubiRobotSdk_NOT_FOUND_MESSAGE
+        "librobotMotionSdk.so is missing from ${UniubiRobotSdk_LIBRARY_DIR}")
+    return()
+endif()
+
+if(NOT TARGET Uniubi::RobotMotionSdk)
+    add_library(Uniubi::RobotMotionSdk SHARED IMPORTED)
+    set_target_properties(Uniubi::RobotMotionSdk PROPERTIES
+        IMPORTED_LOCATION "${UniubiRobotSdk_MOTION_LIBRARY}"
+        INTERFACE_INCLUDE_DIRECTORIES "${UniubiRobotSdk_INCLUDE_DIR}"
+        INTERFACE_LINK_LIBRARIES Threads::Threads)
+endif()
+
+find_library(UniubiRobotSdk_MEDIABUS_LIBRARY
+    NAMES mediaBus
+    PATHS "${UniubiRobotSdk_LIBRARY_DIR}"
+    NO_DEFAULT_PATH
+    NO_CMAKE_FIND_ROOT_PATH)
+find_library(UniubiRobotSdk_UBASE_LIBRARY
+    NAMES ubase
+    PATHS "${UniubiRobotSdk_LIBRARY_DIR}"
+    NO_DEFAULT_PATH
+    NO_CMAKE_FIND_ROOT_PATH)
+if(UniubiRobotSdk_MEDIABUS_LIBRARY AND UniubiRobotSdk_UBASE_LIBRARY
+   AND NOT TARGET Uniubi::MediaBus)
+    add_library(Uniubi::MediaBus SHARED IMPORTED)
+    set_target_properties(Uniubi::MediaBus PROPERTIES
+        IMPORTED_LOCATION "${UniubiRobotSdk_MEDIABUS_LIBRARY}"
+        INTERFACE_INCLUDE_DIRECTORIES "${UniubiRobotSdk_INCLUDE_DIR}"
+        INTERFACE_LINK_LIBRARIES "${UniubiRobotSdk_UBASE_LIBRARY};Threads::Threads")
+endif()
+
+check_required_components(UniubiRobotSdk)

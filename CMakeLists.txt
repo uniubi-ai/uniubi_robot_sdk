@@ -43,6 +43,10 @@ project(uniubi_robot_motion_sdk
     DESCRIPTION "Uniubi Robot Motion SDK – C++ examples"
     LANGUAGES CXX)
 
+include(CMakePackageConfigHelpers)
+include(GNUInstallDirs)
+find_package(Threads REQUIRED)
+
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -95,6 +99,18 @@ if(NOT UNIUBI_UBASE_LIB)
         REQUIRED)
 endif()
 
+add_library(Uniubi::RobotMotionSdk SHARED IMPORTED GLOBAL)
+set_target_properties(Uniubi::RobotMotionSdk PROPERTIES
+    IMPORTED_LOCATION "${UNIUBI_ROBOT_MOTION_SDK_LIB}"
+    INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/include"
+    INTERFACE_LINK_LIBRARIES Threads::Threads)
+
+add_library(Uniubi::MediaBus SHARED IMPORTED GLOBAL)
+set_target_properties(Uniubi::MediaBus PROPERTIES
+    IMPORTED_LOCATION "${UNIUBI_MEDIABUS_LIB}"
+    INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/include"
+    INTERFACE_LINK_LIBRARIES "${UNIUBI_UBASE_LIB};Threads::Threads")
+
 set(UNIUBI_MEDIABUS_SUPPORTED OFF)
 if(UNIUBI_SDK_ARCH_DIR STREQUAL "aarch64")
     set(UNIUBI_MEDIABUS_SUPPORTED ON)
@@ -125,3 +141,27 @@ option(BUILD_SDK_CPP_EXAMPLES "Build C++ SDK examples" ON)
 if(BUILD_SDK_CPP_EXAMPLES)
     add_subdirectory(examples)
 endif()
+
+option(UNIUBI_SDK_INSTALL_RUNTIME "Install the selected architecture SDK runtime" ON)
+if(UNIUBI_SDK_INSTALL_RUNTIME)
+    install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+    install(DIRECTORY lib/${UNIUBI_SDK_ARCH_DIR}/
+        DESTINATION lib/${UNIUBI_SDK_ARCH_DIR})
+endif()
+
+set(UNIUBI_SDK_CMAKE_INSTALL_DIR lib/cmake/UniubiRobotSdk)
+configure_package_config_file(
+    cmake/UniubiRobotSdkConfig.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/UniubiRobotSdkConfig.cmake
+    INSTALL_DESTINATION ${UNIUBI_SDK_CMAKE_INSTALL_DIR})
+write_basic_package_version_file(
+    ${CMAKE_CURRENT_BINARY_DIR}/UniubiRobotSdkConfigVersion.cmake
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY SameMajorVersion)
+install(FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/UniubiRobotSdkConfig.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/UniubiRobotSdkConfigVersion.cmake
+    DESTINATION ${UNIUBI_SDK_CMAKE_INSTALL_DIR})
+
+message(STATUS "Uniubi SDK install prefix: ${CMAKE_INSTALL_PREFIX}")
+message(STATUS "Uniubi SDK install runtime: lib/${UNIUBI_SDK_ARCH_DIR}")

@@ -6,8 +6,6 @@ Uniubi 机器人 C++ 运动控制 SDK 的公开开发仓库，提供公开头文
 
 本仓库已经包含预编译的 `librobotMotionSdk.so` 及配套运行库。这里的 CMake 工程用于编译 C++ 示例和验证开发环境，不会重新编译 SDK 运行库。
 
-仓库当前不要求执行系统级 `make install`：clone 后可以直接把仓库根目录作为 `UNIUBI_SDK_ROOT`，编译自己的程序，并通过 `LD_LIBRARY_PATH` 加载对应架构的运行库。
-
 ### 1. 确定目标架构和构建方式
 
 SDK 架构由**程序最终运行的机器**决定：
@@ -77,7 +75,27 @@ cmake --build build-aarch64 -j
 
 交叉编译产物位于 `build-aarch64/examples/`，需要部署到 Orin 上运行。自定义 sysroot、工具链和安装前缀见 [完整构建指南](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/BUILD.md)。
 
-### 5. 配置运行库
+### 5. 安装 SDK（推荐）
+
+将当前目标架构的公开头、运行库、CMake package 和示例程序安装到一个前缀：
+
+```bash
+cmake --install build --prefix "$HOME/.local/uniubi"
+```
+
+安装后，业务工程可以直接使用导出的 CMake target：
+
+```cmake
+find_package(UniubiRobotSdk CONFIG REQUIRED)
+target_link_libraries(my_robot_app PRIVATE Uniubi::RobotMotionSdk)
+# MediaBus 应用额外链接 Uniubi::MediaBus
+```
+
+配置业务工程时通过 `-DCMAKE_PREFIX_PATH=$HOME/.local/uniubi` 指定安装前缀。安装布局为 `include/`、`lib/<arch>/`、`lib/cmake/UniubiRobotSdk/` 和 `bin/`。
+
+如果只想在源码树内开发，也仍可把仓库根目录直接作为 `UNIUBI_SDK_ROOT`。
+
+### 6. 配置运行库
 
 在最终运行程序的机器上，进入 SDK 仓库根目录并执行：
 
@@ -95,7 +113,7 @@ export LD_LIBRARY_PATH="$UNIUBI_SDK_ROOT/lib/$SDK_ARCH${LD_LIBRARY_PATH:+:$LD_LI
 
 直接编译的示例位于 `build/examples/`；交叉编译的示例位于 `build-aarch64/examples/`。`example_media_frames` 仅在 `aarch64` 目标上默认构建。
 
-### 6. 集成到自己的 CMake 项目
+### 7. 未安装时集成到自己的 CMake 项目
 
 ```cmake
 set(UNIUBI_SDK_ROOT "$ENV{UNIUBI_SDK_ROOT}" CACHE PATH "Uniubi SDK root")
@@ -135,8 +153,8 @@ endif()
 
 | 你要做什么 | 控制模式 | SDK 入口 | 先看哪里 |
 |---|---|---|---|
-| 读取里程计等状态，不控制机器人 | High-level 只读数据 | `MotionHighLevelClient` | [`example_odometry.cpp`](examples/example_odometry.cpp) |
-| 使用机器人内置站立、趴下、行走等动作 | High-level | `MotionHighLevelClient` | [`example_highlevel.cpp`](examples/example_highlevel.cpp) |
+| 查询状态、传感器或里程计 | High-level 只读数据 | `MotionHighLevelClient` | [`example_highlevel.cpp`](examples/example_highlevel.cpp) 的 `--read-only` 模式 |
+| 使用机器人内置站立、趴下、行走等动作 | High-level | `MotionHighLevelClient` | [`example_highlevel.cpp`](examples/example_highlevel.cpp) 交互 CLI |
 | 自己运行策略，直接控制关节位置或扭矩 | Low-level | `MotionLowLevelClient` | [`example_lowlevel.cpp`](examples/example_lowlevel.cpp) |
 | 订阅摄像头、麦克风或编码帧 | MediaBus | `MediaBusClient` | [`example_media_frames.cpp`](examples/example_media_frames.cpp) |
 
@@ -159,25 +177,40 @@ endif()
 
 以下命令以目标机器直接编译生成的 `build/` 目录为例。交叉编译时，应将 `build-aarch64/examples/` 中的程序部署到 Orin，并确保 Orin 使用同一套 `lib/aarch64/` 运行库。
 
-### 只读验证
+### High-level CLI：先做只读验证
 
-`example_odometry` 不申请运动控制权，也不下发动作：
+`example_highlevel` 是交互式 High-level 工具，启动后不会自动执行动作。首次连接使用 `--read-only`，不申请运动控制权：
 
 ```bash
-./build/examples/example_odometry
+./build/examples/example_highlevel --read-only
 ```
 
-里程计只在机器人处于 Walk 动作期间有效。`position` 已由设备端累计，上层不要再次积分。
+进入 CLI 后可执行：
+
+```text
+status
+caps
+system
+state
+motors
+sensor 5
+odom 5
+quit
+```
+
+`odom` 已合并到 High-level CLI。里程计只在机器人处于 Walk 动作期间有效；`position` 已由设备端累计，上层不要再次积分。
 
 ### High-level 控制验证
 
-`example_highlevel` 是综合能力示例，会获取控制权并执行站立、趴下、音频和观测流程，不是只读程序。首次实机运行前必须确保场地空旷、急停可触达并有人值守：
+需要控制机器人时，不加 `--read-only` 启动。程序会获取 High-level 控制权，但不会自动启动动作：
 
 ```bash
 ./build/examples/example_highlevel
 ```
 
-如果默认网卡不是 `eth0`，将网卡名作为第一个参数传入。当前示例按板内单设备流程运行；远端 / 多设备开发请先阅读 High-level API 中的设备发现流程。
+使用 `start ACTION [JSON]` 启动动作，`set JSON` 持续设置动作参数，或用 `send SECONDS JSON` 限时发送参数并自动清零 walking 速度。`stop` 停止当前动作，`release` 释放控制权。
+
+首次实机运行前必须确保场地空旷、急停可触达并有人值守。如果默认网卡不是 `eth0`，使用 `--iface IFACE`；远端 / 多设备模式使用 `--device-id SN`。
 
 ### Low-level 关节控制验证
 
@@ -199,8 +232,8 @@ endif()
 
 | 示例 | 是否申请控制权 | 是否可能引发运动 | 用途 |
 |---|---:|---:|---|
-| `example_odometry` | 否 | 否 | 读取 Walk 平面里程计 |
-| `example_highlevel` | 是 | 是 | High-level 动作、音频和观测综合示例 |
+| `example_highlevel --read-only` | 否 | 否 | High-level 状态、能力、传感器和 Walk 里程计查询 |
+| `example_highlevel` | 是 | 只有显式输入控制命令后才会 | High-level 交互 CLI；保持控制租约并分步测试动作和参数 |
 | `example_lowlevel` | SDK 自动管理 Low-level 会话 | 是 | 关节控制与观测闭环验证 |
 | `example_media_frames` | 否 | 否 | 板内音视频帧订阅和落盘 |
 
