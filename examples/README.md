@@ -84,7 +84,7 @@ export LD_LIBRARY_PATH="/path/to/uniubi-sdk/lib/$SDK_ARCH${LD_LIBRARY_PATH:+:$LD
 |---|---|---|
 | `example_highlevel` | High-level 交互 CLI：查询、传感器/里程计、取权、动作和参数控制 | 启动后不自动执行动作；控制命令仍要求空旷场地、急停可触达、有人值守 |
 | `example_lowlevel` | Low-level 交互 CLI：状态、电机布局、阻尼及站立/趴下纯位置控制 | 启动不动作；首次使能和姿态控制建议先使用吊架，急停可触达 |
-| `example_lowlevel_tensorrt` | 输入 ONNX，每次启动现场构建 FP32 TensorRT engine，并以 50 Hz 运行 Low-level 策略 | 仅 Jetson Orin；启动只连接，执行 `stand` / `walk` 后才使能；必须可靠吊起并有人值守 |
+| `example_lowlevel_tensorrt` | 输入 ONNX，每次启动现场构建 FP32 TensorRT engine，并以 50 Hz 运行 Low-level 策略 | 仅 Jetson Orin；启动只连接；吊架上先验证 `stand` / `lay`，空旷平整地面再验证 `walk`；急停可触达、有人值守 |
 | `example_media_frames` | 板内订阅并落盘媒体帧 | 仅 aarch64，媒体服务和 SHM 已就绪 |
 
 首次联调运行只读模式：
@@ -167,7 +167,15 @@ RR_ABAD, RR_HIP, RR_KNEE
 `SDK leg-major -> 模型 joint-major -> SDK leg-major` 双向重排，并使用实际
 `MotorInfo.limbNo` / `jointNo` 构造控制帧。数量或顺序不匹配时会在使能前退出。
 
-实机命令流程：
+实机动作分两阶段验证。首先将机器狗可靠固定在安全吊架上，保持四脚完全腾空，只执行：
+
+```text
+lowlevel> stand
+lowlevel> lay
+lowlevel> quit
+```
+
+确认姿态、关节方向和急停均正常后，将机器狗放到空旷、平整、无障碍地面，再执行：
 
 ```text
 lowlevel> stand
@@ -176,6 +184,8 @@ lowlevel> stop
 lowlevel> lay
 lowlevel> quit
 ```
+
+不要在四脚腾空时执行 `walk`；两个阶段都必须保持急停可触达并由专人值守。
 
 该策略示例退出时仅在已经处于 prepared 状态时调用 `setMotionEnable(false)`，随后
 断开连接并关闭 SDK；不会调用 `emergencyStop()` 或 `restoreMotionControlMode()`。

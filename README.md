@@ -292,6 +292,26 @@ JetPack 6.2.1 Orin 原生构建默认启用 `example_lowlevel_tensorrt`。该示
 `[1,45] -> [1,12]` ONNX，每次启动都重新构建 FP32 TensorRT engine，不缓存
 engine，也不依赖 PyTorch 或 ONNX Runtime。
 
+实机动作分两阶段验证。首先将机器狗可靠固定在安全吊架上，保持四脚完全腾空，只验证站立和趴下：
+
+```text
+lowlevel> stand
+lowlevel> lay
+lowlevel> quit
+```
+
+确认姿态、关节方向和急停均正常后，将机器狗放到空旷、平整、无障碍地面，再验证策略行走：
+
+```text
+lowlevel> stand
+lowlevel> walk 0.5 0 0
+lowlevel> stop
+lowlevel> lay
+lowlevel> quit
+```
+
+不要在四脚腾空时执行 `walk`；两个阶段都必须保持急停可触达并由专人值守。
+
 ```bash
 cmake -S . -B build -DBUILD_SDK_TENSORRT_EXAMPLE=ON
 cmake --build build --target example_lowlevel_tensorrt -j$(nproc)
