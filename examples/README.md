@@ -30,6 +30,8 @@ esac
 export LD_LIBRARY_PATH="/path/to/uniubi-sdk/lib/$SDK_ARCH${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 ```
 
+当前设备运行 SDK 示例需要 root 权限。不要只写 `sudo ./example`，否则 `sudo` 可能清理 `LD_LIBRARY_PATH`；以下命令显式传入运行库路径。
+
 | 示例 | 行为 | 实机要求 |
 |---|---|---|
 | `example_highlevel` | High-level 交互 CLI：查询、传感器/里程计、取权、动作和参数控制 | 启动后不自动执行动作；控制命令仍要求空旷场地、急停可触达、有人值守 |
@@ -39,7 +41,8 @@ export LD_LIBRARY_PATH="/path/to/uniubi-sdk/lib/$SDK_ARCH${LD_LIBRARY_PATH:+:$LD
 首次联调运行只读模式：
 
 ```bash
-./build/examples/example_highlevel --read-only
+sudo env LD_LIBRARY_PATH="$LD_LIBRARY_PATH" \
+  ./build/examples/example_highlevel --read-only
 ```
 
 进入 CLI 后使用 `status`、`motors`、`odom 5`、`sensor 5` 做只读验证：

@@ -103,6 +103,8 @@ target_link_libraries(my_robot_app PRIVATE Uniubi::RobotMotionSdk)
 
 ### 6. 配置运行库并运行示例
 
+当前设备运行 SDK 程序需要 root 权限。构建过程不需要 `sudo`；运行时使用 `sudo env` 显式传入动态库路径，避免 `sudo` 清理当前用户的 `LD_LIBRARY_PATH`。
+
 如果使用了第 5 节的安装方式，在最终运行程序的机器上执行：
 
 ```bash
@@ -116,7 +118,8 @@ case "$(uname -m)" in
 esac
 
 export LD_LIBRARY_PATH="$UNIUBI_SDK_PREFIX/lib/$SDK_ARCH${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-"$UNIUBI_SDK_PREFIX/bin/example_highlevel" --read-only
+sudo env LD_LIBRARY_PATH="$LD_LIBRARY_PATH" \
+  "$UNIUBI_SDK_PREFIX/bin/example_highlevel" --read-only
 ```
 
 如果直接从源码树运行，在 SDK 仓库根目录执行：
@@ -131,7 +134,8 @@ esac
 
 export UNIUBI_SDK_ROOT="$PWD"
 export LD_LIBRARY_PATH="$UNIUBI_SDK_ROOT/lib/$SDK_ARCH${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-./build/examples/example_highlevel --read-only
+sudo env LD_LIBRARY_PATH="$LD_LIBRARY_PATH" \
+  ./build/examples/example_highlevel --read-only
 ```
 
 直接编译的示例位于 `build/examples/`；交叉编译的示例位于 `build-aarch64/examples/`。`example_media_frames` 仅在 `aarch64` 目标上默认构建。
@@ -202,12 +206,15 @@ endif()
 
 以下命令以目标机器直接编译生成的 `build/` 目录为例。交叉编译时，应将 `build-aarch64/examples/` 中的程序部署到 Orin，并确保 Orin 使用同一套 `lib/aarch64/` 运行库。
 
+以下 SDK 示例均须以 root 权限运行。示例使用 `sudo env LD_LIBRARY_PATH="$LD_LIBRARY_PATH"` 保留 SDK 动态库搜索路径。
+
 ### High-level CLI：先做只读验证
 
 `example_highlevel` 是交互式 High-level 工具，启动后不会自动执行动作。首次连接使用 `--read-only`，不申请运动控制权：
 
 ```bash
-./build/examples/example_highlevel --read-only
+sudo env LD_LIBRARY_PATH="$LD_LIBRARY_PATH" \
+  ./build/examples/example_highlevel --read-only
 ```
 
 进入 CLI 后会显示 `highlevel>` 提示符，可以先完成只读检查：
@@ -228,7 +235,8 @@ highlevel> quit
 需要控制机器人时，不加 `--read-only` 启动。程序会获取 High-level 控制权，但不会自动启动动作：
 
 ```bash
-./build/examples/example_highlevel
+sudo env LD_LIBRARY_PATH="$LD_LIBRARY_PATH" \
+  ./build/examples/example_highlevel
 ```
 
 默认模式连接成功后会自动申请控制权，但不会自动启动动作。`--read-only` 只表示启动时不申请控制权；进入 CLI 后仍可显式执行 `take`。从 `--read-only` 会话显式取权并完成一次限时行走的流程如下：
@@ -253,7 +261,8 @@ highlevel> quit
 `example_lowlevel` 是交互式 Low-level 工具。启动后只建立连接，不使能电机控制，也不会自动执行姿态：
 
 ```bash
-./build/examples/example_lowlevel
+sudo env LD_LIBRARY_PATH="$LD_LIBRARY_PATH" \
+  ./build/examples/example_lowlevel
 ```
 
 进入 CLI 后先检查状态和电机布局，再执行姿态命令：
