@@ -17,6 +17,46 @@ cmake -S .. -B ../build -DBUILD_SDK_TENSORRT_EXAMPLE=ON
 cmake --build ../build --target example_lowlevel_tensorrt -j
 ```
 
+## 在 Ubuntu x86_64 上为 Orin 交叉编译 TensorRT 示例
+
+已验证环境为 Ubuntu 22.04 x86_64 → JetPack 6.2.1 Orin。NVIDIA 交叉包必须从
+`cross-linux-aarch64` 专用软件源安装：
+
+```bash
+wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/cross-linux-aarch64/cuda-keyring_1.1-1_all.deb
+sudo dpkg -i cuda-keyring_1.1-1_all.deb
+sudo apt update
+sudo apt install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+```
+
+当前软件源的 TensorRT 默认 candidate 可能高于目标机版本。先创建：
+
+```text
+# /etc/apt/preferences.d/uniubi-tensorrt-10-3-cross
+Package: tensorrt-dev-cross-aarch64 libnvinfer*-cross-aarch64 libnvonnxparsers*-cross-aarch64
+Pin: version 10.3.0.26-1+cuda12.5
+Pin-Priority: 1001
+```
+
+再安装并构建：
+
+```bash
+sudo apt install cuda-cross-aarch64-12-6 tensorrt-dev-cross-aarch64
+
+cmake -S .. -B ../build-aarch64 \
+  -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain-aarch64-linux-gnu.cmake \
+  -DBUILD_SDK_TENSORRT_EXAMPLE=ON \
+  -DBUILD_SDK_MEDIA_EXAMPLE=OFF \
+  -DUNIUBI_TENSORRT_ROOT=/usr \
+  -DUNIUBI_CUDA_ROOT=/usr/local/cuda-12.6 \
+  -DCMAKE_BUILD_TYPE=Release
+cmake --build ../build-aarch64 --target example_lowlevel_tensorrt -j$(nproc)
+```
+
+交叉依赖下载约 1.14 GB、安装后约占 3.72 GB。SDK CMake 会保留
+`libnvdla_compiler.so`、`libcudla.so.1` 等 Jetson 目标端符号，由 Orin 运行时解析；
+不要链接主机 x86_64 的 TensorRT/CUDA 库。详细说明见 `uniubi-docs/docs/BUILD.md`。
+
 ## 针对已安装 SDK 构建
 
 ```bash
@@ -143,5 +183,6 @@ lowlevel> quit
 
 交叉编译时默认不构建该示例。显式设置
 `-DBUILD_SDK_TENSORRT_EXAMPLE=ON` 后，还必须通过 `UNIUBI_TENSORRT_ROOT` 和
-`UNIUBI_CUDA_ROOT` 提供与目标 JetPack 匹配的 aarch64 头文件和链接库。当前推荐
-路径仍是在 Orin 上原生构建；SDK 仓库不分发 NVIDIA 二进制库。
+`UNIUBI_CUDA_ROOT` 提供与目标 JetPack 匹配的 aarch64 头文件和链接库。上面的
+NVIDIA APT 交叉包路径和 Orin 原生构建路径均已验证；SDK 仓库不分发 NVIDIA
+二进制库。

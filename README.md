@@ -75,6 +75,11 @@ cmake --build build-aarch64 -j
 
 交叉编译产物位于 `build-aarch64/examples/`，需要部署到 Orin 上运行。自定义 sysroot、工具链和安装前缀见 [完整构建指南](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/BUILD.md)。
 
+交叉编译 `example_lowlevel_tensorrt` 还需要 NVIDIA 的 aarch64 CUDA/TensorRT 开发
+包，并将 TensorRT 固定为与 JetPack 6.2.1 对应的 10.3。不能直接使用软件源中的
+默认最新 TensorRT，也不能链接主机 x86_64 NVIDIA 库。已验证的专用软件源、版本
+pin 和完整 CMake 命令见 [构建指南 §3.1](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/BUILD.md#31-交叉编译-tensorrt-示例的额外边界)。
+
 ### 5. 安装 SDK（推荐）
 
 将当前目标架构的公开头、运行库、CMake package 和示例程序安装到一个前缀：
