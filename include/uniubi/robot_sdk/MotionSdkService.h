@@ -60,7 +60,7 @@ public:
 public:
     /**
      * @brief 获取 SDK 版本字符串
-     * @details 格式："<semver> (commit <git-short-sha>)"，例如 "0.1.0 (commit 7bb376b2)"。
+     * @details 格式："<semver> (commit <git-short-sha>)"，例如 "1.0.0 (commit <sha>)"。
      *          任意时刻可调，无需先 initialService；返回字符串由 SDK 静态持有，调用方不应释放
      */
     static const char* version();
