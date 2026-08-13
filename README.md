@@ -138,7 +138,7 @@ sudo env LD_LIBRARY_PATH="$LD_LIBRARY_PATH" \
   ./build/examples/example_highlevel --read-only
 ```
 
-直接编译的示例位于 `build/examples/`；交叉编译的示例位于 `build-aarch64/examples/`。`example_media_frames` 仅在 `aarch64` 目标上默认构建。
+直接编译的示例位于 `build/examples/`；交叉编译的示例位于 `build-aarch64/examples/`。`example_media_frames` 在 `aarch64` 目标上默认构建；`example_lowlevel_tensorrt` 只在 Orin 原生构建时默认启用，交叉编译需显式提供目标端 TensorRT/CUDA 开发文件。
 
 ### 7. 未安装时集成到自己的 CMake 项目
 
@@ -182,7 +182,7 @@ endif()
 |---|---|---|---|
 | 查询状态、传感器或里程计 | High-level 只读数据 | `MotionHighLevelClient` | [`example_highlevel.cpp`](examples/example_highlevel.cpp) 的 `--read-only` 模式 |
 | 使用机器人内置站立、趴下、行走等动作 | High-level | `MotionHighLevelClient` | [`example_highlevel.cpp`](examples/example_highlevel.cpp) 交互 CLI |
-| 自己运行策略，直接控制关节位置或扭矩 | Low-level | `MotionLowLevelClient` | [`example_lowlevel.cpp`](examples/example_lowlevel.cpp) |
+| 自己运行策略，直接控制关节位置或扭矩 | Low-level | `MotionLowLevelClient` | 姿态控制见 [`example_lowlevel.cpp`](examples/example_lowlevel.cpp)；ONNX/TensorRT 策略见 [`example_lowlevel_tensorrt.cpp`](examples/example_lowlevel_tensorrt.cpp) |
 | 订阅摄像头、麦克风或编码帧 | MediaBus | `MediaBusClient` | [`example_media_frames.cpp`](examples/example_media_frames.cpp) |
 
 - **High-level**：应用发送动作或运动意图，由机器人内置能力完成关节级闭环。
@@ -281,6 +281,35 @@ lowlevel> quit
 
 该示例使用标准 DV500 12 关节布局和板端已验证的姿态参数；布局不匹配时会拒绝使能姿态控制。Low-level 示例测试期间必须始终保持机器狗四脚腾空且能够自由活动，不得直接放在地面执行。接口状态要求见 [Low-level SDK API](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/uniubi_low_level_sdk.md)。
 
+### Low-level TensorRT 策略验证（Jetson Orin）
+
+JetPack 6.2.1 Orin 原生构建默认启用 `example_lowlevel_tensorrt`。该示例输入静态
+`[1,45] -> [1,12]` ONNX，每次启动都重新构建 FP32 TensorRT engine，不缓存
+engine，也不依赖 PyTorch 或 ONNX Runtime。
+
+```bash
+cmake -S . -B build -DBUILD_SDK_TENSORRT_EXAMPLE=ON
+cmake --build build --target example_lowlevel_tensorrt -j$(nproc)
+
+# 只构建 engine 并做零输入推理，不初始化 SDK
+taskset -c 2 ./build/examples/example_lowlevel_tensorrt \
+  --onnx /path/to/policy.onnx --validate-only
+
+# 实机交互；建议绑定 CPU 2，减少调度抖动
+sudo env LD_LIBRARY_PATH="$LD_LIBRARY_PATH" \
+  taskset -c 2 ./build/examples/example_lowlevel_tensorrt \
+  --onnx /path/to/policy.onnx
+```
+
+程序在使能前通过 `getMotorLayout()` 校验 12 关节 leg-major 布局，并按照实际
+`limbNo` / `jointNo` 构造控制帧。示例模型使用 joint-major 输入输出顺序，因此代码
+显式执行 `SDK leg-major -> 模型 joint-major -> SDK leg-major` 双向重排；布局、
+关节数或模型 shape 不匹配时拒绝控制。
+
+退出只在必要时调用 `setMotionEnable(false)`，随后断开并关闭 SDK；不调用
+`emergencyStop()` 或 `restoreMotionControlMode()`。完整模型契约、命令和交叉编译
+依赖说明见 [`examples/README.md`](examples/README.md)。
+
 ### MediaBus 验证
 
 `example_media_frames` 仅用于 `aarch64` 板内本地媒体帧订阅。运行前需要确认 `/etc/robot/sdk_config.json`、媒体服务和 SHM 环境已经就绪，具体参数和排查方法见 [运行注意事项](docs/runtime_notes.md)。
@@ -292,6 +321,7 @@ lowlevel> quit
 | `example_highlevel --read-only` | 否 | 否 | High-level 状态、能力、传感器和 Walk 里程计查询 |
 | `example_highlevel` | 是 | 只有显式输入控制命令后才会 | High-level 交互 CLI；保持控制租约并分步测试动作和参数 |
 | `example_lowlevel` | 姿态/阻尼命令按需使能 | `stand` / `lie` 会 | Low-level 交互 CLI；状态检查、阻尼和站立/趴下纯位置控制 |
+| `example_lowlevel_tensorrt` | `stand` / `walk` 按需使能 | `stand` / `walk` / `stop` / `lay` 会 | Orin 板内 ONNX -> FP32 TensorRT Low-level 策略；每次启动重新 build |
 | `example_media_frames` | 否 | 否 | 板内音视频帧订阅和落盘 |
 
 ## 文档导航

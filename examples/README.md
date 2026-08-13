@@ -9,6 +9,14 @@ cmake -S .. -B ../build
 cmake --build ../build -j
 ```
 
+在 JetPack 6.2.1 Orin 上原生构建时，会默认同时构建 C++ TensorRT Low-level
+示例。它使用系统预装的 CUDA 12.6 和 TensorRT 10.3，不依赖 PyTorch：
+
+```bash
+cmake -S .. -B ../build -DBUILD_SDK_TENSORRT_EXAMPLE=ON
+cmake --build ../build --target example_lowlevel_tensorrt -j
+```
+
 ## 针对已安装 SDK 构建
 
 ```bash
@@ -36,6 +44,7 @@ export LD_LIBRARY_PATH="/path/to/uniubi-sdk/lib/$SDK_ARCH${LD_LIBRARY_PATH:+:$LD
 |---|---|---|
 | `example_highlevel` | High-level 交互 CLI：查询、传感器/里程计、取权、动作和参数控制 | 启动后不自动执行动作；控制命令仍要求空旷场地、急停可触达、有人值守 |
 | `example_lowlevel` | Low-level 交互 CLI：状态、电机布局、阻尼及站立/趴下纯位置控制 | 启动不动作；首次使能和姿态控制建议先使用吊架，急停可触达 |
+| `example_lowlevel_tensorrt` | 输入 ONNX，每次启动现场构建 FP32 TensorRT engine，并以 50 Hz 运行 Low-level 策略 | 仅 Jetson Orin；启动只连接，执行 `stand` / `walk` 后才使能；必须可靠吊起并有人值守 |
 | `example_media_frames` | 板内订阅并落盘媒体帧 | 仅 aarch64，媒体服务和 SHM 已就绪 |
 
 首次联调运行只读模式：
@@ -82,3 +91,57 @@ lowlevel> quit
 ```
 
 Low-level 没有 `take` / `startControl` 接口包装；`stand`、`lie` 和 `damping` 内部按需调用 `setMotionEnable(true)`。`stand` / `lie` 使用标准 DV500 12 关节姿态参数，从实时关节位置平滑插值 2 秒后持续保持。布局不匹配时程序会拒绝使能。`Ctrl+C` 和 `quit` 都会执行释放并尝试恢复内置运控。该示例只允许在四脚腾空条件下测试，不得直接落地运行。
+
+## C++ TensorRT Low-level 策略示例
+
+`example_lowlevel_tensorrt` 接收静态 `[1,45] -> [1,12]` ONNX 模型，每次进程启动
+都重新构建 FP32 TensorRT engine，不读取或写入 engine 缓存。运行时只依赖 JetPack
+自带的 TensorRT/CUDA C++ 运行库和 SDK，不依赖 PyTorch、ONNX Runtime。
+
+先做不初始化 SDK、不使能电机的构建与零输入推理验证：
+
+```bash
+taskset -c 2 ./build/examples/example_lowlevel_tensorrt \
+  --onnx /path/to/policy.onnx --validate-only
+```
+
+实机运行需要 root 权限，并建议绑定 CPU 2，以减少调度抖动，使观测获取耗时和
+50 Hz 控制周期更稳定：
+
+```bash
+sudo env LD_LIBRARY_PATH="$LD_LIBRARY_PATH" \
+  taskset -c 2 ./build/examples/example_lowlevel_tensorrt \
+  --onnx /path/to/policy.onnx
+```
+
+程序连接后先调用 `getMotorLayout()`，要求实际布局恰好为 12 关节 leg-major 顺序：
+
+```text
+FL_ABAD, FL_HIP, FL_KNEE,
+FR_ABAD, FR_HIP, FR_KNEE,
+RL_ABAD, RL_HIP, RL_KNEE,
+RR_ABAD, RR_HIP, RR_KNEE
+```
+
+示例模型的输入输出是 joint-major 顺序，程序显式执行
+`SDK leg-major -> 模型 joint-major -> SDK leg-major` 双向重排，并使用实际
+`MotorInfo.limbNo` / `jointNo` 构造控制帧。数量或顺序不匹配时会在使能前退出。
+
+实机命令流程：
+
+```text
+lowlevel> stand
+lowlevel> walk 0.5 0 0
+lowlevel> stop
+lowlevel> lay
+lowlevel> quit
+```
+
+该策略示例退出时仅在已经处于 prepared 状态时调用 `setMotionEnable(false)`，随后
+断开连接并关闭 SDK；不会调用 `emergencyStop()` 或 `restoreMotionControlMode()`。
+这一退出语义与上面的通用 `example_lowlevel` 不同，不应混写。
+
+交叉编译时默认不构建该示例。显式设置
+`-DBUILD_SDK_TENSORRT_EXAMPLE=ON` 后，还必须通过 `UNIUBI_TENSORRT_ROOT` 和
+`UNIUBI_CUDA_ROOT` 提供与目标 JetPack 匹配的 aarch64 头文件和链接库。当前推荐
+路径仍是在 Orin 上原生构建；SDK 仓库不分发 NVIDIA 二进制库。
