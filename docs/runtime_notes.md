@@ -1,67 +1,69 @@
-# 运行注意事项
+# Runtime Notes
 
-本文记录 C++ SDK 接入时容易踩坑的运行行为。完整接口说明统一维护在 [uniubi-docs](https://github.com/uniubi-ai/uniubi-docs)。
+[中文文档](runtime_notes.zh-CN.md)
 
-## High-level 动作是异步的
+This document records runtime behaviors that commonly cause integration mistakes in the C++ SDK. Complete interface documentation is maintained in [uniubi-docs](https://github.com/uniubi-ai/uniubi-docs).
 
-`startAction()`、`standUp()`、`lieDown()` 返回成功，只代表机器人已接受请求，不代表真实姿态已经到位。
+## High-level Actions Are Asynchronous
 
-`queryMotionState()` 只报告当前活动 action。只有存在活动 action 时，返回对象才包含 `action`、速度等字段；没有活动 action 时 RPC 仍然成功，并返回空对象 `{}`。空对象不表示机器人姿态异常，也不表示电机未就绪。RPC 或连接失败时接口返回 `false`，应通过 `getLastError()` 判断错误。
+A successful return from `startAction()`, `standUp()`, or `lieDown()` only means that the robot accepted the request. It does not mean the physical posture has already reached its target.
 
-测试收尾或业务退出时，建议使用观测闭环：
+`queryMotionState()` reports only the currently active action. The result contains `action`, velocity, and related fields only while an action is active. With no active action, the RPC still succeeds and returns the empty object `{}`. An empty object does not indicate an abnormal posture or motors that are not ready. An RPC or connection failure returns `false`; use `getLastError()` to identify the error.
 
-1. 调用 `stopAction()`。
-2. 调用 `lieDown()` 或 `startAction("laying")`。
-3. 轮询 `queryMotionState()`，直到返回空对象（`{}`）或包含 `"action":"laying"`。
-4. 再调用 `releaseControl()`、`disconnect()` 和 `IMotionSdkService::shutdown()`。
+Use an observation-based closed loop when finishing a test or exiting an application:
 
-不要在机器人仍可能处于 `walking` 或其它动作执行中时，只因为 RPC 返回成功就释放连接。
+1. Call `stopAction()`.
+2. Call `lieDown()` or `startAction("laying")`.
+3. Poll `queryMotionState()` until it returns an empty object (`{}`) or an object containing `"action":"laying"`.
+4. Then call `releaseControl()`, `disconnect()`, and `IMotionSdkService::shutdown()`.
 
-## 音频 URL 入库是异步的
+Do not release the connection merely because an RPC succeeded while the robot may still be executing `walking` or another action.
 
-`addAudioFile()` 可能只表示下载任务已被受理。机器人下载并保存完成后，目标音频才会出现在自定义音频列表中。
+## Adding an Audio URL Is Asynchronous
 
-推荐流程：
+`addAudioFile()` may only indicate that a download task was accepted. The target audio appears in the custom audio list only after the robot has downloaded and stored it.
 
-1. 使用稳定的 `id` 和 URL 调用 `addAudioFile()`。
-2. 轮询 `queryAudioPlayList(out, R"({"type":"customVoice"})")`。
-3. 只在目标 `id` 出现后再播放。
-4. 删除前先停止播放。
+Recommended workflow:
 
-## 按需恢复小脑运控前要确认观测闭环
+1. Call `addAudioFile()` with a stable `id` and URL.
+2. Poll `queryAudioPlayList(out, R"({"type":"customVoice"})")`.
+3. Play the audio only after the target `id` appears.
+4. Stop playback before deleting it.
 
-`restoreMotionControlMode()` 用于在开发者需要恢复机器人内置运控能力时，显式将运控主控切回默认的小脑模式。该接口不是每次 `disconnect()` 前的强制步骤；`disconnect()` 也不会自动执行这次切换。
+## Verify the Observation Loop Before Restoring Built-in Motion Control
 
-C++ 控制接口为 `sendControl(action, cmd = nullptr)`。动作相关控制帧建议传入 `LowLevelMotionCmd`，并同时填写动作 id 和动作名，例如站立使用 `action = 1`、`acName = "standing"`，便于服务端内部理解和外部观测。
+`restoreMotionControlMode()` explicitly returns motion-control ownership to the robot's default built-in controller when an application needs that transition. It is not a mandatory step before every `disconnect()`, and `disconnect()` does not perform this transition automatically.
 
-`sendControl()` 返回 `true` 只代表控制帧已提交。如果应用决定恢复小脑运控，需要先通过观测确认机器人已经到达安全姿态：
+The C++ control interface is `sendControl(action, cmd = nullptr)`. For action-related frames, pass a `LowLevelMotionCmd` and populate both the action ID and action name. For example, standing uses `action = 1` and `acName = "standing"`. This helps both internal server interpretation and external observation.
 
-1. 将机器人控制到预期安全姿态，通常是 laying。
-2. 持续调用 `getLatestObservation()`，确认关节位置接近目标姿态。
-3. 调用 `setMotionEnable(false)`，等待状态回到 `kConnected`。
-4. 调用 `restoreMotionControlMode()` 并检查返回值。
+A `true` result from `sendControl()` only means that the frame was submitted. If the application decides to restore built-in motion control, first use observations to confirm that the robot has reached a safe posture:
 
-跳过观测检查，可能会在机器人仍处于过渡姿态时交回控制权。
+1. Control the robot into the expected safe posture, normally laying.
+2. Continue calling `getLatestObservation()` until joint positions are close to the target posture.
+3. Call `setMotionEnable(false)` and wait for the state to return to `kConnected`.
+4. Call `restoreMotionControlMode()` and check its return value.
 
-## Low-level 最大扭矩设置是低频配置
+Skipping the observation check can hand control back while the robot is still transitioning.
 
-`sendMaxTorque(action)` 仅在 `kPrepared` 状态下生效。`action.motorNum` 必须在 `[1, kLowLevelMaxMotorNum]` 范围内；每个元素使用 `header.limbNo` / `header.jointNo` 定位电机，并使用 `torque` 表示目标最大扭矩（N·m）。建议基于 `getMotorLayout()` 返回的布局构造完整配置。
+## Low-level Maximum Torque Is a Low-frequency Configuration
 
-返回 `true` 只代表配置帧已提交到共享内存，不代表电机侧已经完成切换。底层默认存在约 10 ms 的扭矩切换窗口，期间不支持位置控制指令；不要将该接口放入高频 `sendControl()` 循环，也不要在切换窗口内继续下发位置控制帧。可通过后续 `getLatestObservation()` 返回的 `motors[i].maxTorque` 确认当前观测值。
+`sendMaxTorque(action)` takes effect only in the `kPrepared` state. `action.motorNum` must be within `[1, kLowLevelMaxMotorNum]`. Each element identifies a motor with `header.limbNo` / `header.jointNo` and specifies the target maximum torque in N·m with `torque`. Build the complete configuration from the layout returned by `getMotorLayout()`.
 
-## MediaBus 本地配置
+A `true` return only means that the configuration frame was submitted to shared memory; it does not mean the motor-side transition has completed. The lower layer has a default torque-switching window of approximately 10 ms during which position commands are unsupported. Do not put this interface in a high-frequency `sendControl()` loop or continue sending position frames during the switching window. Confirm the observed value later through `motors[i].maxTorque` from `getLatestObservation()`.
 
-`IMediaBusClient` 用于 `aarch64` 板内本地媒体帧订阅。远端 / 多设备 SDK 模式不提供 MediaBus 帧订阅；`x86_64` / `i386` 平台不要调用 `createMediaBusClient()`、`setup()` 或 `start*Frame()` 等 media client 接口。
+## Local MediaBus Configuration
 
-板内部署时，`LocalMediaBusClient` 固定读取 `/etc/robot/sdk_config.json`，并要求存在顶层 `streamDefine` 对象。配置缺失或格式错误时，`setup()` 会失败：
+`IMediaBusClient` provides local, on-board media-frame subscription on `aarch64`. Remote or multi-device SDK mode does not provide MediaBus frame subscription. On `x86_64` / `i386`, do not call media-client interfaces such as `createMediaBusClient()`, `setup()`, or `start*Frame()`.
 
-| 错误 | 常见原因 |
+For on-board deployment, `LocalMediaBusClient` always reads `/etc/robot/sdk_config.json`, which must contain a top-level `streamDefine` object. `setup()` fails when the file is missing or malformed:
+
+| Error | Common cause |
 |---|---|
-| `kConfigLoadFailed` | `/etc/robot/sdk_config.json` 缺失或不可读 |
-| `kConfigInvalid` | 文件存在，但没有顶层 `streamDefine` 对象 |
-| `kMediaInitFailed` / `kMediaStartFailed` | 媒体服务、流通道、运行库或 SHM 运行环境未就绪 |
+| `kConfigLoadFailed` | `/etc/robot/sdk_config.json` is missing or unreadable |
+| `kConfigInvalid` | The file exists but has no top-level `streamDefine` object |
+| `kMediaInitFailed` / `kMediaStartFailed` | The media service, stream channel, runtime libraries, or SHM environment is not ready |
 
-板内最小配置示例：
+Minimal on-board configuration:
 
 ```json
 {
@@ -124,16 +126,16 @@ C++ 控制接口为 `sendControl(action, cmd = nullptr)`。动作相关控制帧
 }
 ```
 
-说明：
+Notes:
 
-- `viStream` 数组长度会成为 `MediaLayout::cameraNum`。
-- `aiStream` 数组长度会成为 `MediaLayout::micNum`。
-- `streamSource.localChannel` 会成为 `MediaLayout::videoEncoderNum`。
-- 这个 JSON 不是 Cyclone DDS XML 配置。
-- `setup()` 和 `getMediaLayout()` 成功只代表初始化和能力查询成功。要确认媒体可用，应订阅并持续统计数秒帧数。
+- The length of `viStream` becomes `MediaLayout::cameraNum`.
+- The length of `aiStream` becomes `MediaLayout::micNum`.
+- `streamSource.localChannel` becomes `MediaLayout::videoEncoderNum`.
+- This JSON is not a Cyclone DDS XML configuration.
+- Successful `setup()` and `getMediaLayout()` calls only confirm initialization and capability discovery. To verify media availability, subscribe and count frames continuously for several seconds.
 
-## 运行库与 SHM 检查
+## Runtime Library and SHM Checks
 
-运行库必须使用同一交付版本、同一目标架构的一组文件。`librobotMotionSdk.so` 和 `libmediaBus.so` 直接依赖 `libudbus.so` 与 `libubase.so`，四者不能跨版本混用；DDS 库和 iceoryx 库也必须与交付包匹配，否则可能表现为服务超时、初始化失败或订阅无帧。
+Runtime libraries must be a matched set from the same delivery version and target architecture. `librobotMotionSdk.so` and `libmediaBus.so` directly depend on `libudbus.so` and `libubase.so`; do not mix versions of these four files. DDS and iceoryx libraries must also match the delivery, otherwise failures can appear as service timeouts, initialization errors, or subscriptions that receive no frames.
 
-当前设备运行 SDK 程序需要 root 权限；板内 Low-level 和 MediaBus 链路还依赖受限的共享内存环境。应按 README 使用 `sudo env LD_LIBRARY_PATH="$LD_LIBRARY_PATH" ...` 启动，不要通过放宽系统文件或 SHM 权限来绕过要求。
+SDK programs require root privileges on current devices. On-board Low-level and MediaBus paths also depend on a restricted shared-memory environment. Start programs with `sudo env LD_LIBRARY_PATH="$LD_LIBRARY_PATH" ...` as described in the README. Do not work around this requirement by relaxing system-file or SHM permissions.

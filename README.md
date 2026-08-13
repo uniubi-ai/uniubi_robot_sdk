@@ -1,42 +1,44 @@
 # Uniubi Robot SDK
 
-Uniubi 机器人 C++ 运动控制 SDK 的公开开发仓库，提供公开头文件、C++ 示例、构建入口和按架构交付的预编译运行库。完整开发路径与 API 说明统一维护在 [`uniubi-docs`](https://github.com/uniubi-ai/uniubi-docs)。
+[中文文档](README.zh-CN.md)
 
-## 编译与安装
+The public development repository for the Uniubi Robot C++ motion-control SDK. It provides public headers, C++ examples, build entry points, and prebuilt runtime libraries for each supported architecture. The complete development workflow and API documentation are maintained in [`uniubi-docs`](https://github.com/uniubi-ai/uniubi-docs).
 
-本仓库已经包含预编译的 `librobotMotionSdk.so` 及配套运行库。这里的 CMake 工程用于编译 C++ 示例和验证开发环境，不会重新编译 SDK 运行库。
+## Build and Install
 
-### 1. 确定目标架构和构建方式
+This repository contains prebuilt `librobotMotionSdk.so` and its companion runtime libraries. The CMake project builds the C++ examples and validates the development environment; it does not rebuild the SDK runtime libraries.
 
-SDK 架构由**程序最终运行的机器**决定：
+### 1. Choose the target architecture and build method
 
-| 程序最终运行位置 | 目标架构 | 典型用途 | 可选构建方式 |
+The SDK architecture is determined by the **machine on which the program will run**:
+
+| Final runtime location | Target architecture | Typical use | Available build methods |
 |---|---|---|---|
-| Uniubi 提供的 Orin 开发板 | `aarch64` | Low-level、MediaBus、板内 High-level | 登录 Orin 直接构建，或在 x86_64 Linux 主机交叉编译 |
-| x86_64 Linux 主机 | `x86_64` | 远端 High-level、Mock / 联调工具 | 在该 x86_64 主机上直接构建 |
-| 32 位 x86 Linux 设备 | `i386` | 特定存量系统 | 在目标设备构建，或使用对应交叉工具链 |
+| Uniubi-provided Orin development board | `aarch64` | Low-level, MediaBus, and on-board High-level | Build natively on Orin, or cross-compile on an x86_64 Linux host |
+| x86_64 Linux host | `x86_64` | Remote High-level, Mock, and integration tools | Build directly on that x86_64 host |
+| 32-bit x86 Linux device | `i386` | Specific legacy systems | Build on the target device or use a matching cross toolchain |
 
-如果程序最终运行在 Orin 上，目标架构始终是 `aarch64`。开发者可以选择：
+If the program will run on Orin, the target architecture is always `aarch64`. You can either:
 
-1. 登录 Uniubi 提供的 Orin 开发板，在 Orin 上原生构建；
-2. 在 x86_64 Linux 主机上交叉编译，再将 `aarch64` 产物部署到 Orin。
+1. log in to the Uniubi-provided Orin board and build natively; or
+2. cross-compile on an x86_64 Linux host and deploy the `aarch64` artifacts to Orin.
 
-Low-level 和 MediaBus 是板内能力，但不限制采用原生构建还是交叉编译。
+Low-level and MediaBus are on-board capabilities, but they do not require one particular build method.
 
-### 2. 准备编译环境
+### 2. Prepare the build environment
 
-| 项目 | 要求 |
+| Item | Requirement |
 |---|---|
-| 操作系统 | Linux |
-| glibc | 2.34 或更高 |
-| 编译器 | g++ 9 或更高，支持 C++14 |
-| CMake | 3.18 或更高 |
+| Operating system | Linux |
+| glibc | 2.34 or later |
+| Compiler | g++ 9 or later with C++14 support |
+| CMake | 3.18 or later |
 
-公开头文件和 `lib/` 下的运行库必须来自同一套 SDK 交付版本，不能跨版本或跨架构混用。
+The public headers and libraries under `lib/` must come from the same SDK delivery. Do not mix versions or architectures.
 
-### 3. 获取 SDK
+### 3. Get the SDK
 
-在编译机器上执行：
+Run on the build machine:
 
 ```bash
 git clone https://github.com/uniubi-ai/uniubi_robot_sdk.git
@@ -44,26 +46,26 @@ cd uniubi_robot_sdk
 export UNIUBI_SDK_ROOT="$PWD"
 ```
 
-### 4. 选择一种编译方式
+### 4. Select a build method
 
-#### 方式 A：在最终运行机器上直接编译
+#### Option A: build on the final runtime machine
 
-在 Orin、x86_64 Linux 主机或对应目标设备上执行：
+Run on Orin, an x86_64 Linux host, or the corresponding target device:
 
 ```bash
 cmake -S . -B build
 cmake --build build -j
 ```
 
-CMake 根据当前机器的 `CMAKE_SYSTEM_PROCESSOR` 自动选择运行库：
+CMake selects the runtime directory from the current machine's `CMAKE_SYSTEM_PROCESSOR`:
 
-- Orin：`lib/aarch64/`；
-- x86_64 Linux：`lib/x86_64/`；
-- 32 位 x86：`lib/i386/`。
+- Orin: `lib/aarch64/`
+- x86_64 Linux: `lib/x86_64/`
+- 32-bit x86: `lib/i386/`
 
-#### 方式 B：在 x86_64 Linux 主机上为 Orin 交叉编译
+#### Option B: cross-compile for Orin on an x86_64 Linux host
 
-安装 `aarch64` 交叉编译器后，使用仓库提供的工具链文件：
+Install an `aarch64` cross-compiler and use the toolchain file provided by this repository:
 
 ```bash
 sudo apt install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
@@ -73,44 +75,41 @@ cmake -S . -B build-aarch64 \
 cmake --build build-aarch64 -j
 ```
 
-交叉编译产物位于 `build-aarch64/examples/`，需要部署到 Orin 上运行。自定义 sysroot、工具链和安装前缀见 [完整构建指南](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/BUILD.md)。
+The artifacts are written to `build-aarch64/examples/` and must run on Orin. See the [complete build guide](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/BUILD.md) for custom sysroots, toolchains, and install prefixes.
 
-交叉编译 `example_lowlevel_tensorrt` 还需要 NVIDIA 的 aarch64 CUDA/TensorRT 开发
-包，并将 TensorRT 固定为与 JetPack 6.2.1 对应的 10.3。不能直接使用软件源中的
-默认最新 TensorRT，也不能链接主机 x86_64 NVIDIA 库。已验证的专用软件源、版本
-pin 和完整 CMake 命令见 [构建指南 §3.1](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/BUILD.md#31-交叉编译-tensorrt-示例的额外边界)。
+Cross-compiling `example_lowlevel_tensorrt` also requires NVIDIA's aarch64 CUDA/TensorRT development packages. TensorRT must be pinned to 10.3, which matches JetPack 6.2.1. Do not use the repository's latest default TensorRT package and do not link NVIDIA x86_64 host libraries. See the [Build Guide](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/BUILD.md) for the validated cross repository, version pin, and complete CMake command.
 
-### 5. 安装 SDK（推荐）
+### 5. Install the SDK (recommended)
 
-将当前目标架构的公开头、运行库、CMake package 和示例程序安装到一个前缀：
+Install the public headers, runtime libraries for the current target architecture, CMake package, and example programs into one prefix:
 
 ```bash
 cmake --install build --prefix "$HOME/.local/uniubi"
 ```
 
-如果是在 x86_64 Linux 主机上为 Orin 交叉编译，则安装对应的交叉编译目录：
+When cross-compiling for Orin on an x86_64 Linux host, install the cross-build directory instead:
 
 ```bash
 cmake --install build-aarch64 --prefix "$HOME/.local/uniubi-aarch64"
 ```
 
-安装后，业务工程可以直接使用导出的 CMake target：
+Consumer projects can then use the exported CMake targets:
 
 ```cmake
 find_package(UniubiRobotSdk CONFIG REQUIRED)
 target_link_libraries(my_robot_app PRIVATE Uniubi::RobotMotionSdk)
-# MediaBus 应用额外链接 Uniubi::MediaBus
+# MediaBus applications additionally link Uniubi::MediaBus
 ```
 
-配置业务工程时通过 `-DCMAKE_PREFIX_PATH=$HOME/.local/uniubi` 指定安装前缀。安装布局为 `include/`、`lib/<arch>/`、`lib/cmake/UniubiRobotSdk/` 和 `bin/`。交叉安装目录中的程序和运行库需要一起部署到 Orin，不能在编译主机上运行。
+Pass `-DCMAKE_PREFIX_PATH=$HOME/.local/uniubi` when configuring the consumer project. The install layout contains `include/`, `lib/<arch>/`, `lib/cmake/UniubiRobotSdk/`, and `bin/`. Programs and runtime libraries from a cross-install prefix must be deployed together to Orin and cannot run on the build host.
 
-如果只想在源码树内开发，也仍可把仓库根目录直接作为 `UNIUBI_SDK_ROOT`。
+For source-tree development, you can continue to use the repository root as `UNIUBI_SDK_ROOT`.
 
-### 6. 配置运行库并运行示例
+### 6. Configure runtime libraries and run an example
 
-当前设备运行 SDK 程序需要 root 权限。构建过程不需要 `sudo`；运行时使用 `sudo env` 显式传入动态库路径，避免 `sudo` 清理当前用户的 `LD_LIBRARY_PATH`。
+SDK programs require root privileges on the current devices. Building does not require `sudo`. At runtime, use `sudo env` to pass the library path explicitly because `sudo` may remove the current user's `LD_LIBRARY_PATH`.
 
-如果使用了第 5 节的安装方式，在最终运行程序的机器上执行：
+If you installed the SDK as described in section 5, run the following on the final runtime machine:
 
 ```bash
 export UNIUBI_SDK_PREFIX="$HOME/.local/uniubi"
@@ -127,7 +126,7 @@ sudo env LD_LIBRARY_PATH="$LD_LIBRARY_PATH" \
   "$UNIUBI_SDK_PREFIX/bin/example_highlevel" --read-only
 ```
 
-如果直接从源码树运行，在 SDK 仓库根目录执行：
+To run directly from the source tree, execute in the SDK repository root:
 
 ```bash
 case "$(uname -m)" in
@@ -143,9 +142,9 @@ sudo env LD_LIBRARY_PATH="$LD_LIBRARY_PATH" \
   ./build/examples/example_highlevel --read-only
 ```
 
-直接编译的示例位于 `build/examples/`；交叉编译的示例位于 `build-aarch64/examples/`。`example_media_frames` 在 `aarch64` 目标上默认构建；`example_lowlevel_tensorrt` 只在 Orin 原生构建时默认启用，交叉编译需显式提供目标端 TensorRT/CUDA 开发文件。
+Native-build examples are under `build/examples/`; cross-build examples are under `build-aarch64/examples/`. `example_media_frames` is built by default for `aarch64`. `example_lowlevel_tensorrt` is enabled by default only for a native Orin build; a cross-build must explicitly provide the target TensorRT/CUDA development files.
 
-### 7. 未安装时集成到自己的 CMake 项目
+### 7. Integrate without installing the SDK
 
 ```cmake
 set(UNIUBI_SDK_ROOT "$ENV{UNIUBI_SDK_ROOT}" CACHE PATH "Uniubi SDK root")
@@ -177,52 +176,52 @@ if(CMAKE_CROSSCOMPILING AND ARCH_DIR STREQUAL "aarch64")
 endif()
 ```
 
-运行时还必须保证同架构、同版本的 `libmediaBus.so`、`libudbus.so`、`libubase.so` 及其配套依赖可以被动态链接器找到。
+At runtime, the dynamic linker must also be able to find matching versions and architectures of `libmediaBus.so`, `libudbus.so`, `libubase.so`, and their companion dependencies.
 
-## 选择开发路径
+## Choose a Development Path
 
-完成编译和运行库配置后，再按开发目标选择 SDK 入口：
+After the build and runtime library setup, choose an SDK entry point based on your goal:
 
-| 你要做什么 | 控制模式 | SDK 入口 | 先看哪里 |
+| Goal | Control mode | SDK entry point | Start here |
 |---|---|---|---|
-| 查询状态、传感器或里程计 | High-level 只读数据 | `MotionHighLevelClient` | [`example_highlevel.cpp`](examples/example_highlevel.cpp) 的 `--read-only` 模式 |
-| 使用机器人内置站立、趴下、行走等动作 | High-level | `MotionHighLevelClient` | [`example_highlevel.cpp`](examples/example_highlevel.cpp) 交互 CLI |
-| 自己运行策略，直接控制关节位置或扭矩 | Low-level | `MotionLowLevelClient` | 姿态控制见 [`example_lowlevel.cpp`](examples/example_lowlevel.cpp)；ONNX/TensorRT 策略见 [`example_lowlevel_tensorrt.cpp`](examples/example_lowlevel_tensorrt.cpp) |
-| 订阅摄像头、麦克风或编码帧 | MediaBus | `MediaBusClient` | [`example_media_frames.cpp`](examples/example_media_frames.cpp) |
+| Query state, sensors, or odometry | Read-only High-level data | `MotionHighLevelClient` | `--read-only` mode in [`example_highlevel.cpp`](examples/example_highlevel.cpp) |
+| Use built-in stand, lie-down, walk, and other motions | High-level | `MotionHighLevelClient` | Interactive CLI in [`example_highlevel.cpp`](examples/example_highlevel.cpp) |
+| Run your own policy and directly control joint position or torque | Low-level | `MotionLowLevelClient` | [`example_lowlevel.cpp`](examples/example_lowlevel.cpp) for posture control; [`example_lowlevel_tensorrt.cpp`](examples/example_lowlevel_tensorrt.cpp) for ONNX/TensorRT policies |
+| Subscribe to camera, microphone, or encoded frames | MediaBus | `MediaBusClient` | [`example_media_frames.cpp`](examples/example_media_frames.cpp) |
 
-- **High-level**：应用发送动作或运动意图，由机器人内置能力完成关节级闭环。
-- **Low-level**：应用自己运行策略或控制器，并周期性生成关节位置或扭矩控制量。
+- **High-level:** the application sends a motion or action intent, and the robot's built-in capability closes the joint-level loop.
+- **Low-level:** the application runs its own policy or controller and periodically generates joint-position or torque commands.
 
-`queryMotionState()` 查询的是当前活动 action，不是机器人姿态或电机是否就绪。只有存在活动 action 时，返回对象才包含 `action`、速度等状态字段；没有活动 action 时，调用仍成功，但输出为标准空对象 `{}`。连接或 RPC 失败则返回 `false`，调用方应通过 `getLastError()` 获取原因。
+`queryMotionState()` reports the currently active action, not the robot posture or motor readiness. The result contains `action`, velocity, and related state fields only while an action is active. With no active action, the call still succeeds and returns the standard empty object `{}`. A connection or RPC failure returns `false`; use `getLastError()` to retrieve the cause.
 
-如果还没有确定控制模式，先阅读 [`uniubi-docs` Quick Start](https://github.com/uniubi-ai/uniubi-docs#quick-start)。
+If you have not selected a control mode yet, start with the [`uniubi-docs` Quick Start](https://github.com/uniubi-ai/uniubi-docs#quick-start).
 
-## 能力与部署边界
+## Capability and Deployment Boundaries
 
-| 能力 | 板内单设备 | 远端 / 多设备 | 关键限制 |
+| Capability | On-board, single device | Remote / multiple devices | Key restriction |
 |---|---:|---:|---|
-| High-level 控制与观测 | 支持 | 支持 | 远端模式需要选择网卡并使用设备 SN 创建 client |
-| Low-level 关节控制 | 支持 | 不支持 | 直连本地 MotionServer，数据面使用 SHM |
-| MediaBus 帧订阅 | 仅 `aarch64` | 不支持 | 依赖板内媒体服务、配置和 SHM |
+| High-level control and observation | Supported | Supported | Remote mode must select a network interface and create a client with the device SN |
+| Low-level joint control | Supported | Not supported | Connects directly to the local MotionServer; the data plane uses SHM |
+| MediaBus frame subscription | `aarch64` only | Not supported | Depends on the on-board media service, configuration, and SHM |
 
-仓库中的 High-level 和里程计示例按板内单设备流程编写。远端 / 多设备应用需要先发现设备，再用目标设备 SN 创建 client，详见 [High-level SDK API](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/uniubi_high_level_sdk.md)。
+The High-level and odometry examples use the on-board, single-device workflow. A remote or multi-device application must discover devices first, then create the client with the selected device SN. See the [High-level SDK API](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/uniubi_high_level_sdk.md).
 
-## 运行示例
+## Run the Examples
 
-以下命令以目标机器直接编译生成的 `build/` 目录为例。交叉编译时，应将 `build-aarch64/examples/` 中的程序部署到 Orin，并确保 Orin 使用同一套 `lib/aarch64/` 运行库。
+The following commands assume a native `build/` directory on the target machine. For a cross-build, deploy programs from `build-aarch64/examples/` to Orin and use the same `lib/aarch64/` runtime set there.
 
-以下 SDK 示例均须以 root 权限运行。示例使用 `sudo env LD_LIBRARY_PATH="$LD_LIBRARY_PATH"` 保留 SDK 动态库搜索路径。
+All SDK examples require root privileges on current devices. The commands use `sudo env LD_LIBRARY_PATH="$LD_LIBRARY_PATH"` to preserve the SDK dynamic-library search path.
 
-### High-level CLI：先做只读验证
+### High-level CLI: begin with read-only validation
 
-`example_highlevel` 是交互式 High-level 工具，启动后不会自动执行动作。首次连接使用 `--read-only`，不申请运动控制权：
+`example_highlevel` is an interactive High-level tool. It does not start any action automatically. For the first connection, use `--read-only` so it does not request motion-control ownership:
 
 ```bash
 sudo env LD_LIBRARY_PATH="$LD_LIBRARY_PATH" \
   ./build/examples/example_highlevel --read-only
 ```
 
-进入 CLI 后会显示 `highlevel>` 提示符，可以先完成只读检查：
+At the `highlevel>` prompt, begin with read-only checks:
 
 ```text
 highlevel> status
@@ -233,18 +232,18 @@ highlevel> odom 5
 highlevel> quit
 ```
 
-`odom` 已合并到 High-level CLI。里程计只在机器人处于 Walk 动作期间有效；`position` 已由设备端累计，上层不要再次积分。
+`odom` is part of the High-level CLI. Odometry is valid only while the robot is in the Walk action. `position` is already accumulated on the device; do not integrate it again in the application.
 
-### High-level 控制验证
+### High-level control validation
 
-需要控制机器人时，不加 `--read-only` 启动。程序会获取 High-level 控制权，但不会自动启动动作：
+To control the robot, start without `--read-only`. The program obtains High-level control ownership but still does not start an action automatically:
 
 ```bash
 sudo env LD_LIBRARY_PATH="$LD_LIBRARY_PATH" \
   ./build/examples/example_highlevel
 ```
 
-默认模式连接成功后会自动申请控制权，但不会自动启动动作。`--read-only` 只表示启动时不申请控制权；进入 CLI 后仍可显式执行 `take`。从 `--read-only` 会话显式取权并完成一次限时行走的流程如下：
+The default mode requests ownership after connecting but starts no action. `--read-only` only prevents ownership acquisition at startup; you can still explicitly run `take` in that session. A timed walk after explicitly taking ownership from a read-only session looks like this:
 
 ```text
 highlevel> take
@@ -255,22 +254,22 @@ highlevel> release
 highlevel> quit
 ```
 
-`start ACTION [JSON]` 启动动作，`set JSON` 持续设置动作参数，`send SECONDS JSON` 限时发送参数并在结束后自动清零 walking 速度。`zero` 只清零 walking 速度、不会结束动作；`stop` 停止当前动作，`release` 释放控制权，`estop` 请求急停。随时输入 `help` 查看程序当前支持的完整命令。
+`start ACTION [JSON]` starts an action, `set JSON` continuously updates action parameters, and `send SECONDS JSON` sends parameters for a bounded duration and then automatically zeros walking velocity. `zero` only zeros walking velocity; it does not stop the action. `stop` stops the current action, `release` releases ownership, and `estop` requests an emergency stop. Enter `help` at any time for the current command list.
 
-首次实机运行前必须确保场地空旷、急停可触达并有人值守。如果默认网卡不是 `eth0`，使用 `--iface IFACE`；远端 / 多设备模式使用 `--device-id SN`。
+Before the first hardware run, use a clear area, keep the emergency stop within reach, and have an operator attend the robot. If the default interface is not `eth0`, pass `--iface IFACE`. For remote or multi-device mode, pass `--device-id SN`.
 
-### Low-level 关节控制验证
+### Low-level joint-control validation
 
-> **测试前必须将机器狗可靠吊起，使四脚完全腾空，并确保四肢在运动范围内能够自由活动、不会碰到地面、吊架或周围物体；同时保持急停可触达并由专人值守。**
+> **Before testing, secure the robot on a reliable safety rig with all four feet fully clear. Ensure every leg can move throughout its range without touching the floor, rig, or nearby objects. Keep the emergency stop within reach and have a dedicated operator attend the robot.**
 
-`example_lowlevel` 是交互式 Low-level 工具。启动后只建立连接，不使能电机控制，也不会自动执行姿态：
+`example_lowlevel` is an interactive Low-level tool. At startup it only connects; it neither enables motor control nor executes a posture automatically:
 
 ```bash
 sudo env LD_LIBRARY_PATH="$LD_LIBRARY_PATH" \
   ./build/examples/example_lowlevel
 ```
 
-进入 CLI 后先检查状态和电机布局，再执行姿态命令：
+Check state and motor layout before issuing posture commands:
 
 ```text
 lowlevel> status
@@ -282,17 +281,15 @@ lowlevel> release
 lowlevel> quit
 ```
 
-`stand`、`lie` 和 `damping` 会按需调用 `setMotionEnable(true)`，CLI 不额外包装 High-level 风格的 `take` 命令。`stand` 和 `lie` 从实时关节位置开始，以 50 Hz 在 2 秒内平滑移动到目标姿态并持续保持。`damping` 清零位置刚度并保留速度阻尼，`release` 先进入阻尼再关闭 Low-level 控制，`quit` 还会尝试恢复机器人内置运控。
+`stand`, `lie`, and `damping` call `setMotionEnable(true)` as needed; the CLI does not wrap them in a High-level-style `take` command. `stand` and `lie` start from the live joint positions, interpolate smoothly to the target posture at 50 Hz over two seconds, and then hold it. `damping` zeros position stiffness while retaining velocity damping. `release` enters damping before disabling Low-level control. `quit` also attempts to restore the robot's built-in motion control.
 
-该示例使用标准 DV500 12 关节布局和板端已验证的姿态参数；布局不匹配时会拒绝使能姿态控制。Low-level 示例测试期间必须始终保持机器狗四脚腾空且能够自由活动，不得直接放在地面执行。接口状态要求见 [Low-level SDK API](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/uniubi_low_level_sdk.md)。
+The example uses the standard DV500 12-joint layout and posture parameters validated on the board. It refuses to enable posture control when the layout does not match. Keep the robot fully suspended with all feet clear throughout this Low-level example; do not run it directly on the ground. See the [Low-level SDK API](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/uniubi_low_level_sdk.md) for state requirements.
 
-### Low-level TensorRT 策略验证（Jetson Orin）
+### Low-level TensorRT policy validation (Jetson Orin)
 
-JetPack 6.2.1 Orin 原生构建默认启用 `example_lowlevel_tensorrt`。该示例输入静态
-`[1,45] -> [1,12]` ONNX，每次启动都重新构建 FP32 TensorRT engine，不缓存
-engine，也不依赖 PyTorch 或 ONNX Runtime。
+A native JetPack 6.2.1 Orin build enables `example_lowlevel_tensorrt` by default. The example accepts a static `[1,45] -> [1,12]` ONNX model and rebuilds an FP32 TensorRT engine at every startup. It does not cache the engine and does not depend on PyTorch or ONNX Runtime.
 
-实机动作分两阶段验证。首先将机器狗可靠固定在安全吊架上，保持四脚完全腾空，只验证站立和趴下：
+Validate hardware motion in two stages. First, secure the robot on a safety rig with all four feet fully clear and validate only standing and lying down:
 
 ```text
 lowlevel> stand
@@ -300,7 +297,7 @@ lowlevel> lay
 lowlevel> quit
 ```
 
-确认姿态、关节方向和急停均正常后，将机器狗放到空旷、平整、无障碍地面，再验证策略行走：
+After confirming the postures, joint directions, and emergency stop, place the robot on clear, level, obstacle-free ground and then validate policy walking:
 
 ```text
 lowlevel> stand
@@ -310,57 +307,52 @@ lowlevel> lay
 lowlevel> quit
 ```
 
-不要在四脚腾空时执行 `walk`；两个阶段都必须保持急停可触达并由专人值守。
+Do not execute `walk` while all four feet are suspended. During both stages, keep the emergency stop within reach and have a dedicated operator attend the robot.
 
 ```bash
 cmake -S . -B build -DBUILD_SDK_TENSORRT_EXAMPLE=ON
 cmake --build build --target example_lowlevel_tensorrt -j$(nproc)
 
-# 只构建 engine 并做零输入推理，不初始化 SDK
+# Build the engine and run one zero-input inference without initializing the SDK
 taskset -c 2 ./build/examples/example_lowlevel_tensorrt \
   --onnx /path/to/policy.onnx --validate-only
 
-# 实机交互；建议绑定 CPU 2，减少调度抖动
+# Interactive hardware run; pinning to CPU 2 is recommended to reduce scheduler jitter
 sudo env LD_LIBRARY_PATH="$LD_LIBRARY_PATH" \
   taskset -c 2 ./build/examples/example_lowlevel_tensorrt \
   --onnx /path/to/policy.onnx
 ```
 
-程序在使能前通过 `getMotorLayout()` 校验 12 关节 leg-major 布局，并按照实际
-`limbNo` / `jointNo` 构造控制帧。示例模型使用 joint-major 输入输出顺序，因此代码
-显式执行 `SDK leg-major -> 模型 joint-major -> SDK leg-major` 双向重排；布局、
-关节数或模型 shape 不匹配时拒绝控制。
+Before enabling control, the program calls `getMotorLayout()` and verifies a 12-joint leg-major layout. It constructs control frames from the actual `limbNo` / `jointNo`. The example model uses joint-major input and output order, so the implementation explicitly performs the bidirectional `SDK leg-major -> model joint-major -> SDK leg-major` reorder. It refuses control if the layout, joint count, or model shape does not match.
 
-退出只在必要时调用 `setMotionEnable(false)`，随后断开并关闭 SDK；不调用
-`emergencyStop()` 或 `restoreMotionControlMode()`。完整模型契约、命令和交叉编译
-依赖说明见 [`examples/README.md`](examples/README.md)。
+On exit, the program calls `setMotionEnable(false)` only when needed, then disconnects and shuts down the SDK. It does not call `emergencyStop()` or `restoreMotionControlMode()`. See [`examples/README.md`](examples/README.md) for the complete model contract, commands, and cross-compilation dependencies.
 
-### MediaBus 验证
+### MediaBus validation
 
-`example_media_frames` 仅用于 `aarch64` 板内本地媒体帧订阅。运行前需要确认 `/etc/robot/sdk_config.json`、媒体服务和 SHM 环境已经就绪，具体参数和排查方法见 [运行注意事项](docs/runtime_notes.md)。
+`example_media_frames` is only for local on-board media-frame subscription on `aarch64`. Before running it, confirm that `/etc/robot/sdk_config.json`, the media service, and the SHM environment are ready. See [Runtime Notes](docs/runtime_notes.md) for configuration and troubleshooting.
 
-## 示例索引
+## Example Index
 
-| 示例 | 是否申请控制权 | 是否可能引发运动 | 用途 |
+| Example | Acquires control | Can cause motion | Purpose |
 |---|---:|---:|---|
-| `example_highlevel --read-only` | 否 | 否 | High-level 状态、能力、传感器和 Walk 里程计查询 |
-| `example_highlevel` | 是 | 只有显式输入控制命令后才会 | High-level 交互 CLI；保持控制租约并分步测试动作和参数 |
-| `example_lowlevel` | 姿态/阻尼命令按需使能 | `stand` / `lie` 会 | Low-level 交互 CLI；状态检查、阻尼和站立/趴下纯位置控制 |
-| `example_lowlevel_tensorrt` | `stand` / `walk` 按需使能 | `stand` / `walk` / `stop` / `lay` 会 | Orin 板内 ONNX -> FP32 TensorRT Low-level 策略；每次启动重新 build |
-| `example_media_frames` | 否 | 否 | 板内音视频帧订阅和落盘 |
+| `example_highlevel --read-only` | No | No | Query High-level state, capabilities, sensors, and Walk odometry |
+| `example_highlevel` | Yes | Only after an explicit control command | Interactive High-level CLI; keeps the control lease and tests actions and parameters step by step |
+| `example_lowlevel` | Enables as required by posture/damping commands | `stand` / `lie` can | Interactive Low-level CLI for state checks, damping, and pure-position stand/lie control |
+| `example_lowlevel_tensorrt` | Enables as required by `stand` / `walk` | `stand` / `walk` / `stop` / `lay` can | On-board Orin ONNX -> FP32 TensorRT Low-level policy; rebuilds at every startup |
+| `example_media_frames` | No | No | Subscribe to and save on-board audio/video frames |
 
-## 文档导航
+## Documentation
 
-- [SDK 运行注意事项](docs/runtime_notes.md)
-- [`uniubi-docs` 开发入口](https://github.com/uniubi-ai/uniubi-docs)
-- [构建、安装和交叉编译](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/BUILD.md)
+- [SDK Runtime Notes](docs/runtime_notes.md)
+- [`uniubi-docs` development entry point](https://github.com/uniubi-ai/uniubi-docs)
+- [Build, installation, and cross-compilation](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/BUILD.md)
 - [High-level SDK API](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/uniubi_high_level_sdk.md)
 - [Low-level SDK API](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/uniubi_low_level_sdk.md)
 - [Media SDK API](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/uniubi_media_sdk.md)
-- [控制权与仲裁](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/core-concepts/control-ownership.md)
+- [Core Concepts](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/core-concepts/README.md)
 
-DDS / ROS 2 协议直连属于 Advanced 集成路径，不是普通 C++ SDK 开发入口；需要时从 [`uniubi-docs` Advanced](https://github.com/uniubi-ai/uniubi-docs/tree/main/docs/advanced) 进入。
+Direct DDS / ROS 2 protocol integration is an Advanced path rather than the standard C++ SDK entry point. When needed, begin at [`uniubi-docs` Advanced](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/advanced/README.md).
 
-## 许可证
+## License
 
-本仓库中的 UniUbi 原创代码、头文件、示例和文档使用 Apache License 2.0。预编译库和第三方组件按各自条款授权。详见 [LICENSE](LICENSE)、[NOTICE](NOTICE) 和 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+Original UniUbi code, headers, examples, and documentation in this repository are licensed under the Apache License 2.0. Prebuilt libraries and third-party components are licensed under their respective terms. See [LICENSE](LICENSE), [NOTICE](NOTICE), and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
