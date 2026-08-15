@@ -105,9 +105,9 @@ public:
      * @brief 全局初始化：加载配置客户端
      * @param file    JSON 配置文件路径
      * @param server  SDK 客户端标识（用于 RPC call.clientId）
-     * @param timeout 等待系统环境准备好；本地模式下，如果sdk启动比系统环境早，那么可能超时; 单位s
+     * @param timeoutMs 等待系统环境准备好；本地模式下，如果sdk启动比系统环境早，那么可能超时; 单位 ms
      */
-    virtual bool initialService(const char* file, const char* server,uint32_t timeout = 30) = 0;
+    virtual bool initialService(const char* file, const char* server,uint32_t timeoutMs = 30000) = 0;
 };
 
 }

@@ -133,80 +133,80 @@ public:
     /**
      * @brief 获取电池电量信息
      * @param power
-     * @param timeout
+     * @param timeoutMs 数据新鲜度窗口，单位 ms
      * @return
      */
-    virtual bool getPowerInfo(PowerObserved *power, uint32_t timeout) = 0;
+    virtual bool getPowerInfo(PowerObserved *power, uint32_t timeoutMs) = 0;
     /**
      * @brief 获取 SDK 数据面缓存的完整传感器观测，不发 RPC
      * @param sensor 返回 GPS、UWB 和里程计
-     * @param timeout 数据新鲜度窗口，单位 ms
+     * @param timeoutMs 数据新鲜度窗口，单位 ms
      */
-    virtual bool getSensorObservation(SensorObserved* sensor,uint32_t timeout = 5000) = 0;
+    virtual bool getSensorObservation(SensorObserved* sensor,uint32_t timeoutMs = 5000) = 0;
 public:
     /**
      * @brief 停止播放（必须先 startControl），对应高层 RPC stopPlayList，空参形态
      */
-    virtual bool stopAudioPlay(uint32_t timeout = 5000) = 0;
+    virtual bool stopAudioPlay(uint32_t timeoutMs = 5000) = 0;
     /**
      * @brief 暂停播放（必须先 startControl），对应高层 RPC stopPlayList + {"pause":true}
      *        恢复播放请用 startAudioPlay("{\"resume\":true}", ...)
      */
-    virtual bool pauseAudioPlay(uint32_t timeout = 5000) = 0;
+    virtual bool pauseAudioPlay(uint32_t timeoutMs = 5000) = 0;
     /**
      * @brief 查询当前播放详情（任何已 connect 状态均可），对应高层 RPC getAudioPlayDetail
      */
-    virtual bool queryAudioPlayDetail(std::string& out, uint32_t timeout = 5000) = 0;
+    virtual bool queryAudioPlayDetail(std::string& out, uint32_t timeoutMs = 5000) = 0;
     /**
      * @brief 获取摄像头补光灯亮度
      * @param out
-     * @param timeout
+     * @param timeoutMs
      * @return
      */
-    virtual bool getCameraLightBrightness(std::string& out, uint32_t timeout = 5000) = 0;
+    virtual bool getCameraLightBrightness(std::string& out, uint32_t timeoutMs = 5000) = 0;
     /**
      * @brief 摄像头前灯亮度控制（必须先 startControl）
      *        对应 RPC robotAppService.setFrontLightBrightness
      * @param brightness 亮度 0~100
      */
-    virtual bool setCameraLightBrightness(int32_t brightness, uint32_t timeout = 5000) = 0;
+    virtual bool setCameraLightBrightness(int32_t brightness, uint32_t timeoutMs = 5000) = 0;
     /**
      * @brief 启动/调参/恢复/改重复次数 —— 复用高层 RPC startPlayList，按 paramsJson 字段决定语义
      */
-    virtual bool startAudioPlay(const std::string& paramsJson, uint32_t timeout = 5000) = 0;
+    virtual bool startAudioPlay(const std::string& paramsJson, uint32_t timeoutMs = 5000) = 0;
     /**
      * @brief 新增音频文件（必须先 startControl），对应高层 RPC addAudioFile
      */
-    virtual bool addAudioFile(const std::string& paramsJson, uint32_t timeout = 30000) = 0;
+    virtual bool addAudioFile(const std::string& paramsJson, uint32_t timeoutMs = 30000) = 0;
     /**
      * @brief 删除音频文件（必须先 startControl），对应高层 RPC deleteAudioFile
      */
-    virtual bool deleteAudioFile(const std::string& paramsJson, uint32_t timeout = 5000) = 0;
+    virtual bool deleteAudioFile(const std::string& paramsJson, uint32_t timeoutMs = 5000) = 0;
     /**
      * @brief 查询音频文件列表（任何已 connect 状态均可），对应高层 RPC getAudioPlayList
      */
-    virtual bool queryAudioPlayList(std::string& out, const std::string& paramsJson = "", uint32_t timeout = 5000) = 0;
+    virtual bool queryAudioPlayList(std::string& out, const std::string& paramsJson = "", uint32_t timeoutMs = 5000) = 0;
 public:
     /**
      * @brief 停止当前动作
      */
-    virtual bool stopAction(uint32_t timeout = 5000) = 0;
+    virtual bool stopAction(uint32_t timeoutMs = 5000) = 0;
     /**
      * @brief 异步请求控制权（立即返回，state 由 worker 推进至 kControlled）
-     * @param timeout 拿到控制权的整体截止时间（ms）。worker 在此时间内持续重试 acquireMode；
+     * @param timeoutMs 拿到控制权的整体截止时间（ms）。worker 在此时间内持续重试 acquireMode；
      *                超时仍未拿到 → 撤销 intent + ConnectCallback(kConnected, kRpcAcquireRejected)
      * @return true 请求已受理（不代表已持有，调用方通过 ConnectCallback / getState() 感知）；
      *              false 当前 kDisconnected（必须先 connect）
      */
-    virtual bool startControl(uint32_t timeout = 10000) = 0;
+    virtual bool startControl(uint32_t timeoutMs = 10000) = 0;
     /**
      * @brief 急停（必须先 startControl 获取控制权）
      */
-    virtual bool emergencyStop(uint32_t timeout = 5000) = 0;
+    virtual bool emergencyStop(uint32_t timeoutMs = 5000) = 0;
     /**
      * @brief 跌倒后恢复站立（自我翻正 + 起立）
      */
-    virtual bool recoveryStand(uint32_t timeout = 5000) = 0;
+    virtual bool recoveryStand(uint32_t timeoutMs = 5000) = 0;
     /**
      * @brief 查询当前运控状态（与控制权无关，任何已 connect 状态均可）
      * @param out 输出 JSON 字符串（UTF-8）；有活动动作时字段：
@@ -217,17 +217,17 @@ public:
      * @return true = RPC 成功；**无活动动作时 out 是空对象 `{}`**，调用方据此判断"无可查询动作"，不要假设字段必定存在
      *         false = RPC 失败（未 connect / 超时 / 通道不可用等）；通过 getLastError() 取错误码
      */
-    virtual bool queryMotionState(std::string& out, uint32_t timeout = 5000) = 0;
+    virtual bool queryMotionState(std::string& out, uint32_t timeoutMs = 5000) = 0;
     /**
      * @brief 查询系统状态详情（任何已 connect 状态均可），对应 RPC robotAppService.getStatusDetail
      * @param out 输出 JSON 字符串（UTF-8），字段：
      *   - network object  网络信息：ether/hotspot/mobile/wlan 子对象，每个含
      */
-    virtual bool querySystemStatus(std::string& out, uint32_t timeout = 5000) = 0;
+    virtual bool querySystemStatus(std::string& out, uint32_t timeoutMs = 5000) = 0;
     /**
      * @brief 获取电机硬件布局（kConnected 后即可调用，硬件配置启动后不变；SDK 内部缓存）
      * @param layout 输出：电机数 + 每电机的 (limbNo, jointNo, name)
-     * @param timeout RPC 超时（ms），首次调用走 RPC；之后缓存命中无延迟
+     * @param timeoutMs RPC 超时（ms），首次调用走 RPC；之后缓存命中无延迟
      * @return true 拿到布局；false 未连接 / RPC 失败 / 配置无效
      *
      * 典型用法：
@@ -239,7 +239,7 @@ public:
      *         // layout.motors[i].name = "leftFrontLeg.hip" 等可读名
      *     }
      */
-    virtual bool getMotorLayout(MotorLayout& layout, uint32_t timeout = 5000) = 0;
+    virtual bool getMotorLayout(MotorLayout& layout, uint32_t timeoutMs = 5000) = 0;
     /**
      * @brief 查询服务端能力（支持的高级动作集合等，与控制权无关）
      * @param out 输出 JSON 字符串（UTF-8），数组元素字段：
@@ -247,7 +247,7 @@ public:
      *   - buttons array  动作对应的 TRC 按键组合，仅用于诊断/展示
      *   - params  array  可选动作参数，元素含 name/min/max/unit
      */
-    virtual bool getMotionCapabilities(std::string& out, uint32_t timeout = 5000) = 0;
+    virtual bool getMotionCapabilities(std::string& out, uint32_t timeoutMs = 5000) = 0;
     /**
      * @brief 修改当前动作参数（不切换动作）
      * @param paramsJson 动作参数 JSON 字符串。字段以 queryCapabilities() 返回的 params 为准；
@@ -255,14 +255,14 @@ public:
      *                   例如 walking 前进：{"lineVelocityX":1.5}
      * @note 参数会转换为 TRC 轴值并保持生效；再次调用 startAction/setActionParams 或 stopAction 会覆盖/清除。
      */
-    virtual bool setActionParams(const std::string& paramsJson = "", uint32_t timeout = 5000) = 0;
+    virtual bool setActionParams(const std::string& paramsJson = "", uint32_t timeoutMs = 5000) = 0;
     /**
      * @brief 观测数据上报（任何已 connect 状态均可），对应 RPC robotAppService.setMotionObservedEnable
      *        服务端 hook 不做鉴权，SDK 侧也不强校验持权。
      * @param json 设置配置
      * @param ret  当前配置
      */
-    virtual bool setObservedEnable(const std::string& json,std::string& ret,uint32_t timeout = 5000) = 0;
+    virtual bool setObservedEnable(const std::string& json,std::string& ret,uint32_t timeoutMs = 5000) = 0;
     /**
      * @brief 启动执行高级动作（必须先 startControl）
      * @param action 动作名（如 "walking" / "jumpFrontflip" / "jumpBackflip"）
@@ -272,21 +272,21 @@ public:
      * @note 单次 startAction 会把动作和参数写入服务端 TRC 状态缓存，持续生效直到 stopAction
      *       或后续动作/参数调用覆盖；不需要周期性重复发送同一 walking 请求。
      */
-    virtual bool startAction(const std::string& action, const std::string& paramsJson = "", uint32_t timeout = 5000) = 0;
+    virtual bool startAction(const std::string& action, const std::string& paramsJson = "", uint32_t timeoutMs = 5000) = 0;
 public:
     /**
      * @brief 进入阻尼/慢沉（软卸力）
      * @note 关节切到低刚度阻尼，在重力下缓慢可控下沉，不锁死也不瘫砸；用作安全软停
      */
-    virtual bool damp(uint32_t timeout = 5000) = 0;
+    virtual bool damp(uint32_t timeoutMs = 5000) = 0;
     /**
      * @brief 趴下/卧倒
      */
-    virtual bool lieDown(uint32_t timeout = 5000) = 0;
+    virtual bool lieDown(uint32_t timeoutMs = 5000) = 0;
     /**
      * @brief 站立
      */
-    virtual bool standUp(uint32_t timeout = 5000) = 0;
+    virtual bool standUp(uint32_t timeoutMs = 5000) = 0;
     /**
      * @brief 行走
      * @param vx   前后线速度，正值向前（单位见 queryCapabilities 对应 param）
@@ -294,7 +294,7 @@ public:
      * @param vyaw 转向角速度
      * @note 持续生效直到 stopAction 或后续动作/参数覆盖；仅调速度用 setActionParams 即可，无需重复 move
      */
-    virtual bool move(float vx, float vy, float vyaw, uint32_t timeout = 5000) = 0;
+    virtual bool move(float vx, float vy, float vyaw, uint32_t timeoutMs = 5000) = 0;
 };
 
 }

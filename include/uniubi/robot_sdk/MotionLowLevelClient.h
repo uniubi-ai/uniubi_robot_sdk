@@ -84,10 +84,10 @@ public:
     virtual bool setMotionEnable(bool enable) = 0;
     /**
      * @brief 紧急急停
-     * @param timeout
+     * @param timeoutMs
      * @return
      */
-    virtual bool emergencyStop(uint32_t timeout = 5000) = 0;
+    virtual bool emergencyStop(uint32_t timeoutMs = 5000) = 0;
     /**
      * @brief 注册连接结果回调（在 worker 线程中调用）
      */
@@ -99,10 +99,10 @@ public:
     virtual IMediaBusClient::Ptr createMediaBusClient() = 0;
     /**
      * @brief 运控模式恢复默认
-     * @param timeout ms
+     * @param timeoutMs ms
      * @return
      */
-    virtual bool restoreMotionControlMode(uint32_t timeout = 5000) = 0;
+    virtual bool restoreMotionControlMode(uint32_t timeoutMs = 5000) = 0;
     /**
      * @brief 连接到 MotionServer（非阻塞，内部 worker 线程自动完成全流程，幂等）
      *        连接结果通过 getState()/getLastError()/ConnectCallback 感知
@@ -129,7 +129,7 @@ public:
     /**
      * @brief 获取电机硬件布局（kConnected 后即可调用，硬件配置启动后不变；SDK 内部缓存）
      * @param layout 输出：电机数 + 每电机的 (limbNo, jointNo, name)
-     * @param timeout RPC 超时（ms），首次调用走 RPC；之后缓存命中无延迟
+     * @param timeoutMs RPC 超时（ms），首次调用走 RPC；之后缓存命中无延迟
      * @return true 拿到布局；false 未连接 / RPC 失败 / 配置无效
      *
      * 典型用法：
@@ -141,22 +141,22 @@ public:
      *         // layout.motors[i].name = "leftFrontLeg.hip" 等可读名
      *     }
      */
-    virtual bool getMotorLayout(MotorLayout& layout, uint32_t timeout = 5000) = 0;
+    virtual bool getMotorLayout(MotorLayout& layout, uint32_t timeoutMs = 5000) = 0;
     /**
      * @brief 获取传感器数据(GPS + UWB)
      * @details 与运控 prepare 无关,kConnected / kPrepared 任一状态均可读(传感器常驻采集);
      *          无传感器硬件的设备无数据写入,会等待至超时返回 false
      * @param sensor 输出:GPS + UWB 原始观测
-     * @param timeout 等待数据的超时(us)
+     * @param timeoutMs 等待数据的超时(ms)
      * @return true 拿到数据;false 未连接 / 超时 / 无数据
      */
-    virtual bool getSensorObservation(SensorObserved* sensor,uint32_t timeout) = 0;
+    virtual bool getSensorObservation(SensorObserved* sensor,uint32_t timeoutMs) = 0;
     /**
      * @brief 获取最新观测量（拉模式）
      * @param obs 输出观测量
      * @return true 有数据
      */
-    virtual bool getLatestObservation(LowLevelMotionObserved* obs, uint32_t timeout) = 0;
+    virtual bool getLatestObservation(LowLevelMotionObserved* obs, uint32_t timeoutMs) = 0;
     /**
      * @brief 发送控制帧（仅 kPrepared 状态下生效，否则返回 false 并置 lastError）
      * @param action 电机控制数据
