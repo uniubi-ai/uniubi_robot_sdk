@@ -1,8 +1,8 @@
-# 运行注意事项
+# 故障排查
 
-[English](runtime_notes.md)
+[English](troubleshooting.md)
 
-本文记录 C++ SDK 接入时容易踩坑的运行行为。完整接口说明统一维护在 [uniubi-docs](https://github.com/uniubi-ai/uniubi-docs)。
+本文汇总 C++ SDK 接入中的常见问题、原因及检查或处理方法。完整接口说明见 C++ API 文档：[High-level](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/api-reference/cpp/high-level.zh-CN.md)、[Low-level](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/api-reference/cpp/low-level.zh-CN.md) 和 [MediaBus](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/api-reference/cpp/media.zh-CN.md)。
 
 ## High-level 动作是异步的
 

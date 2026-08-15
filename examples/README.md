@@ -76,7 +76,7 @@ esac
 export LD_LIBRARY_PATH="/path/to/uniubi-sdk/lib/$SDK_ARCH${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 ```
 
-SDK examples require root privileges on current devices. Do not use only `sudo ./example`, because `sudo` may remove `LD_LIBRARY_PATH`; the commands below pass the runtime path explicitly.
+On-board High-level, Low-level, and MediaBus examples require root privileges on current devices. Do not use only `sudo ./example` on-board, because `sudo` may remove `LD_LIBRARY_PATH`. External Linux x86_64 High-level discovery and client commands have been validated as a normal user.
 
 | Example | Behavior | Hardware requirements |
 |---|---|---|
@@ -85,11 +85,45 @@ SDK examples require root privileges on current devices. Do not use only `sudo .
 | `example_lowlevel_tensorrt` | Accepts ONNX, builds an FP32 TensorRT engine at every startup, and runs a Low-level policy at 50 Hz | Jetson Orin only; startup only connects; validate `stand` / `lay` on a rig, then `walk` on clear, level ground; emergency stop reachable and operator attending |
 | `example_media_frames` | Subscribes to and saves on-board media frames | `aarch64` only; media service and SHM ready |
 
-For the first integration run, use read-only mode:
+High-level can run either on the robot as an `aarch64` program or on an
+external Linux x86_64 host. On-board single-device mode does not require an SN;
+use the board High-level interface `eth0.100` for the first read-only run:
 
 ```bash
 sudo env LD_LIBRARY_PATH="$LD_LIBRARY_PATH" \
-  ./build/examples/example_highlevel --read-only
+  ./build/examples/example_highlevel --iface eth0.100 --read-only
+```
+
+For an external host, check `ip -brief link` and enter the actual interface that
+reaches the robot. Discover first; this mode is read-only and never selects a
+device:
+
+```bash
+read -r -p "Host interface that reaches robot: " UNIUBI_IFACE
+./build/examples/example_highlevel \
+  --iface "$UNIUBI_IFACE" --discover-only
+```
+
+The callback is registered before SDK initialization. Results are collected
+for five seconds and deduplicated by SN; a second five-second request is made
+only if the first window received no callback.
+
+There are two supported ways to obtain the target device ID:
+
+1. Read the SN directly from the robot's **Basic Information** page in the Uniubi App.
+2. Use SDK discovery. If it returns multiple robots and the target IP is known,
+   inspect each result's `info` JSON and match the IP against
+   `network.ether.ipv4Addr`, `network.wlan.ipv4Addr`,
+   `network.hotspot.ipv4Addr`, or `network.mobile.ipv4Addr` to find its SN.
+
+IP is only used to filter discovery results. Always pass the selected SN, not
+the IP, to `--device-id`. Enter the SN exactly and pass both real values when
+connecting:
+
+```bash
+read -r -p "Device SN from discovery: " UNIUBI_DEVICE_SN
+./build/examples/example_highlevel \
+  --iface "$UNIUBI_IFACE" --device-id "$UNIUBI_DEVICE_SN" --read-only
 ```
 
 At the CLI, use `status`, `motors`, `odom 5`, and `sensor 5` for read-only validation:
@@ -101,7 +135,7 @@ highlevel> sensor 5
 highlevel> odom 5
 ```
 
-`--read-only` means that the program does not acquire control at startup. Run `take` explicitly when control is needed. For example:
+`--read-only` means that the program does not acquire control at startup. Run `take` explicitly when control is needed. To start directly in control mode, use `--iface eth0.100` on-board; an external host must retain both `--iface "$UNIUBI_IFACE"` and `--device-id "$UNIUBI_DEVICE_SN"`. For example:
 
 ```text
 highlevel> take

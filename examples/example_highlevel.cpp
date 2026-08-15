@@ -6,11 +6,13 @@
 #include <atomic>
 #include <chrono>
 #include <csignal>
+#include <condition_variable>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <iomanip>
 #include <iostream>
+#include <map>
 #include <memory>
 #include <mutex>
 #include <poll.h>
@@ -55,17 +57,20 @@ struct Options {
     std::string deviceId;
     int32_t leaseMs = 15000;
     bool readOnly = false;
+    bool discoverOnly = false;
+    bool ifaceProvided = false;
 };
 
 void printUsage(const char* program) {
     std::cout
         << "Usage: " << program << " [options]\n\n"
         << "Options:\n"
-        << "  --iface IFACE       DDS network interface (default: eth0)\n"
+        << "  --iface IFACE       DDS interface; required for discovery/remote mode\n"
         << "  --client-id ID      SDK client id\n"
-        << "  --device-id SN      target SN in remote/multi-device mode\n"
+        << "  --device-id SN      target SN for external-host device addressing\n"
         << "  --lease-ms MS       control lease hint (default: 15000)\n"
         << "  --read-only         connect without acquiring High-level control\n"
+        << "  --discover-only     list discovered devices, then exit without connecting\n"
         << "  -h, --help          show this help\n\n"
         << "The CLI never starts an action automatically. Type 'help' after connecting.\n";
 }
@@ -91,13 +96,20 @@ bool parseOptions(int argc, char** argv, Options& options) {
             options.readOnly = true;
             continue;
         }
+        if (arg == "--discover-only") {
+            options.discoverOnly = true;
+            continue;
+        }
         if (arg == "--iface" || arg == "--client-id" || arg == "--device-id" ||
             arg == "--lease-ms") {
             if (++i >= argc) {
                 std::cerr << "missing value for " << arg << '\n';
                 return false;
             }
-            if (arg == "--iface") options.iface = argv[i];
+            if (arg == "--iface") {
+                options.iface = argv[i];
+                options.ifaceProvided = true;
+            }
             else if (arg == "--client-id") options.clientId = argv[i];
             else if (arg == "--device-id") options.deviceId = argv[i];
             else if (!parseInt32(argv[i], options.leaseMs)) {
@@ -110,6 +122,79 @@ bool parseOptions(int argc, char** argv, Options& options) {
         printUsage(argv[0]);
         return false;
     }
+    if ((options.discoverOnly || !options.deviceId.empty()) &&
+        !options.ifaceProvided) {
+        std::cerr << "--discover-only and remote --device-id require an explicit --iface\n";
+        return false;
+    }
+    if (options.discoverOnly && !options.deviceId.empty()) {
+        std::cerr << "--discover-only does not accept --device-id; it never selects a device\n";
+        return false;
+    }
+    return true;
+}
+
+class DiscoveryResults {
+public:
+    void add(const std::string& sn, const std::string& info) {
+        if (sn.empty()) return;
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            devices_[sn] = info;
+        }
+        changed_.notify_all();
+    }
+
+    void waitFor(std::chrono::seconds duration) {
+        const auto deadline = std::chrono::steady_clock::now() + duration;
+        std::unique_lock<std::mutex> lock(mutex_);
+        while (!gStopping && std::chrono::steady_clock::now() < deadline) {
+            changed_.wait_until(lock, deadline);
+        }
+    }
+
+    bool empty() const {
+        std::lock_guard<std::mutex> lock(mutex_);
+        return devices_.empty();
+    }
+
+    void print() const {
+        std::lock_guard<std::mutex> lock(mutex_);
+        std::cout << "Discovered " << devices_.size() << " unique device(s):\n";
+        for (const auto& device : devices_) {
+            std::cout << "  SN=" << device.first << " info=" << device.second << '\n';
+        }
+    }
+
+private:
+    mutable std::mutex mutex_;
+    std::condition_variable changed_;
+    std::map<std::string, std::string> devices_;
+};
+
+bool runDiscovery(IMotionSdkService* service, const std::shared_ptr<DiscoveryResults>& results) {
+    constexpr uint32_t kDiscoveryWindowMs = 5000;
+    if (!service->discoverDevices(kDiscoveryWindowMs)) {
+        std::cerr << "[FAIL] device discovery request failed\n";
+        return false;
+    }
+    results->waitFor(std::chrono::seconds(5));
+
+    if (results->empty() && !gStopping) {
+        std::cout << "[INFO] no discovery callback in 5s; retrying once\n";
+        if (!service->discoverDevices(kDiscoveryWindowMs)) {
+            std::cerr << "[FAIL] device discovery retry failed\n";
+            return false;
+        }
+        results->waitFor(std::chrono::seconds(5));
+    }
+
+    results->print();
+    if (results->empty()) {
+        std::cerr << "[FAIL] no device discovered; verify --iface and network reachability\n";
+        return false;
+    }
+    std::cout << "[INFO] discovery is read-only; rerun with an explicit --device-id SN\n";
     return true;
 }
 
@@ -500,6 +585,11 @@ int main(int argc, char** argv) {
     std::signal(SIGTERM, onSignal);
 
     auto service = IMotionSdkService::instance();
+    auto discoveryResults = std::make_shared<DiscoveryResults>();
+    service->setDiscoverCallback(
+        [discoveryResults](const std::string& sn, const std::string& info) {
+            discoveryResults->add(sn, info);
+        });
     service->setNetworkInterface(options.iface.c_str());
     if (!service->initialService(nullptr, options.clientId.c_str())) {
         std::cerr << "[FAIL] SDK init failed\n";
@@ -509,9 +599,14 @@ int main(int argc, char** argv) {
     int status = 0;
     ClientPtr client;
     try {
+        if (options.discoverOnly) {
+            status = runDiscovery(service, discoveryResults) ? 0 : 1;
+            service->shutdown();
+            return status;
+        }
         if (options.deviceId.empty() && service->isMultiDevice()) {
             throw std::runtime_error(
-                "multi-device mode requires --device-id SN (use discoverDevices first)");
+                "SDK multi-device mode requires --device-id SN (run --discover-only first)");
         }
         client = options.deviceId.empty() ? Client::create(false)
                                           : Client::create(options.deviceId);

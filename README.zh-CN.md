@@ -110,9 +110,10 @@ target_link_libraries(my_robot_app PRIVATE Uniubi::RobotMotionSdk)
 
 ### 6. 配置运行库并运行示例
 
-当前设备运行 SDK 程序需要 root 权限。构建过程不需要 `sudo`；运行时使用 `sudo env` 显式传入动态库路径，避免 `sudo` 清理当前用户的 `LD_LIBRARY_PATH`。
+构建过程不需要 `sudo`。当前设备上的板载 High-level、Low-level 和 MediaBus 程序需要 root 权限，运行时使用 `sudo env` 保留 `LD_LIBRARY_PATH`；外部 Linux x86_64 High-level client 已验证可由普通用户运行，不应笼统描述为必须 root。
 
-如果使用了第 5 节的安装方式，在最终运行程序的机器上执行：
+如果使用了第 5 节的安装方式，下面展示板载 `aarch64` 单设备形式，并显式使用板载
+High-level 网卡 `eth0.100`：
 
 ```bash
 export UNIUBI_SDK_PREFIX="$HOME/.local/uniubi"
@@ -126,7 +127,7 @@ esac
 
 export LD_LIBRARY_PATH="$UNIUBI_SDK_PREFIX/lib/$SDK_ARCH${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 sudo env LD_LIBRARY_PATH="$LD_LIBRARY_PATH" \
-  "$UNIUBI_SDK_PREFIX/bin/example_highlevel" --read-only
+  "$UNIUBI_SDK_PREFIX/bin/example_highlevel" --iface eth0.100 --read-only
 ```
 
 如果直接从源码树运行，在 SDK 仓库根目录执行：
@@ -142,7 +143,7 @@ esac
 export UNIUBI_SDK_ROOT="$PWD"
 export LD_LIBRARY_PATH="$UNIUBI_SDK_ROOT/lib/$SDK_ARCH${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 sudo env LD_LIBRARY_PATH="$LD_LIBRARY_PATH" \
-  ./build/examples/example_highlevel --read-only
+  ./build/examples/example_highlevel --iface eth0.100 --read-only
 ```
 
 直接编译的示例位于 `build/examples/`；交叉编译的示例位于 `build-aarch64/examples/`。`example_media_frames` 在 `aarch64` 目标上默认构建；`example_lowlevel_tensorrt` 只在 Orin 原生构建时默认启用，交叉编译需显式提供目标端 TensorRT/CUDA 开发文件。
@@ -201,27 +202,62 @@ endif()
 
 ## 能力与部署边界
 
-| 能力 | 板内单设备 | 远端 / 多设备 | 关键限制 |
+| 能力 | 板内单设备 | 外部主机（按设备寻址） | 关键限制 |
 |---|---:|---:|---|
-| High-level 控制与观测 | 支持 | 支持 | 远端模式需要选择网卡并使用设备 SN 创建 client |
+| High-level 控制与观测 | 支持 | 支持 | 外部主机即使只访问一台机器人，也必须选择网卡并使用设备 SN 创建 client |
 | Low-level 关节控制 | 支持 | 不支持 | 直连本地 MotionServer，数据面使用 SHM |
 | MediaBus 帧订阅 | 仅 `aarch64` | 不支持 | 依赖板内媒体服务、配置和 SHM |
 
-仓库中的 High-level 和里程计示例按板内单设备流程编写。远端 / 多设备应用需要先发现设备，再用目标设备 SN 创建 client，详见 [High-level SDK API](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/uniubi_high_level_sdk.zh-CN.md)。
+`example_highlevel` 支持两种部署：可将 `aarch64` 程序放在机器人板内按单设备方式运行，
+也可在外部 Linux x86_64 主机运行 `x86_64` 程序进行远端 High-level 访问。外部访问必须
+使用能到达机器人的主机网卡和显式目标 SN，程序不会自动选择发现到的第一台设备。详见
+[High-level SDK API](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/uniubi_high_level_sdk.zh-CN.md)。
+SDK 内部的多设备能力不是另一种部署形态，而是用于支持外部主机发现设备并按 SN 创建 client。
 
 ## 运行示例
 
 以下命令以目标机器直接编译生成的 `build/` 目录为例。交叉编译时，应将 `build-aarch64/examples/` 中的程序部署到 Orin，并确保 Orin 使用同一套 `lib/aarch64/` 运行库。
 
-以下 SDK 示例均须以 root 权限运行。示例使用 `sudo env LD_LIBRARY_PATH="$LD_LIBRARY_PATH"` 保留 SDK 动态库搜索路径。
+当前设备上的板载 High-level、Low-level 和 MediaBus 示例需要 root 权限，命令使用 `sudo env LD_LIBRARY_PATH="$LD_LIBRARY_PATH"`；外部 Linux x86_64 High-level 发现与 client 命令使用已导出的运行库路径，以普通用户运行。
 
-### High-level CLI：先做只读验证
+### High-level CLI：选择板载或外部 Linux 运行
 
 `example_highlevel` 是交互式 High-level 工具，启动后不会自动执行动作。首次连接使用 `--read-only`，不申请运动控制权：
 
+在机器人板内运行（`aarch64`、单设备）时，SDK 创建本地 client，不需要设备 SN，显式
+使用板载 High-level 网卡 `eth0.100`：
+
 ```bash
 sudo env LD_LIBRARY_PATH="$LD_LIBRARY_PATH" \
-  ./build/examples/example_highlevel --read-only
+  ./build/examples/example_highlevel --iface eth0.100 --read-only
+```
+
+在外部 Linux x86_64 主机运行时，先用 `ip -brief link` 核对并输入能到达机器人的真实
+网卡，再执行纯只读发现：
+
+```bash
+read -r -p "Host interface that reaches robot: " UNIUBI_IFACE
+./build/examples/example_highlevel \
+  --iface "$UNIUBI_IFACE" --discover-only
+```
+
+发现回调在 SDK 初始化前注册；程序收集 5 秒并按 SN 去重，只有首个窗口完全没有回调时
+才重试一次。发现模式不创建机器人 client、不取权，也不会自动选设备。
+
+目标 device ID 有两种获取方式：
+
+1. 在 Uniubi App 中打开机器人的“基础信息”页面，直接查看 SN。
+2. 使用上面的 SDK discovery。若发现结果包含多台机器人且已知目标 IP，检查每条结果的
+   `info` JSON，用该 IP 匹配 `network.ether.ipv4Addr`、`network.wlan.ipv4Addr`、
+   `network.hotspot.ipv4Addr` 或 `network.mobile.ipv4Addr`，由此找到对应 SN。
+
+IP 只用于筛选 discovery 结果；`--device-id` 最终始终传目标机器人的 SN，不能传 IP。
+输入真实 SN 后，再同时传入真实网卡和显式 device ID 进行只读连接：
+
+```bash
+read -r -p "Device SN from discovery: " UNIUBI_DEVICE_SN
+./build/examples/example_highlevel \
+  --iface "$UNIUBI_IFACE" --device-id "$UNIUBI_DEVICE_SN" --read-only
 ```
 
 进入 CLI 后会显示 `highlevel>` 提示符，可以先完成只读检查：
@@ -239,11 +275,18 @@ highlevel> quit
 
 ### High-level 控制验证
 
-需要控制机器人时，不加 `--read-only` 启动。程序会获取 High-level 控制权，但不会自动启动动作：
+需要控制机器人时，不加 `--read-only` 启动。程序会获取 High-level 控制权，但不会自动启动动作。板载命令为：
 
 ```bash
 sudo env LD_LIBRARY_PATH="$LD_LIBRARY_PATH" \
-  ./build/examples/example_highlevel
+  ./build/examples/example_highlevel --iface eth0.100
+```
+
+外部 Linux 主机必须继续显式传入两个真实值：
+
+```bash
+./build/examples/example_highlevel \
+  --iface "$UNIUBI_IFACE" --device-id "$UNIUBI_DEVICE_SN"
 ```
 
 默认模式连接成功后会自动申请控制权，但不会自动启动动作。`--read-only` 只表示启动时不申请控制权；进入 CLI 后仍可显式执行 `take`。从 `--read-only` 会话显式取权并完成一次限时行走的流程如下：
@@ -259,7 +302,7 @@ highlevel> quit
 
 `start ACTION [JSON]` 启动动作，`set JSON` 持续设置动作参数，`send SECONDS JSON` 限时发送参数并在结束后自动清零 walking 速度。`zero` 只清零 walking 速度、不会结束动作；`stop` 停止当前动作，`release` 释放控制权，`estop` 请求急停。随时输入 `help` 查看程序当前支持的完整命令。
 
-首次实机运行前必须确保场地空旷、急停可触达并有人值守。如果默认网卡不是 `eth0`，使用 `--iface IFACE`；远端 / 多设备模式使用 `--device-id SN`。
+首次实机运行前必须确保场地空旷、急停可触达并有人值守。外部连接不得依赖默认网卡，也不得省略 `--device-id`。
 
 ### Low-level 关节控制验证
 
@@ -339,12 +382,13 @@ sudo env LD_LIBRARY_PATH="$LD_LIBRARY_PATH" \
 
 ### MediaBus 验证
 
-`example_media_frames` 仅用于 `aarch64` 板内本地媒体帧订阅。运行前需要确认 `/etc/robot/sdk_config.json`、媒体服务和 SHM 环境已经就绪，具体参数和排查方法见 [运行注意事项](docs/runtime_notes.md)。
+`example_media_frames` 仅用于 `aarch64` 板内本地媒体帧订阅。运行前需要确认 `/etc/robot/sdk_config.json`、媒体服务和 SHM 环境已经就绪，具体参数和排查方法见 [故障排查](docs/troubleshooting.zh-CN.md)。
 
 ## 示例索引
 
 | 示例 | 是否申请控制权 | 是否可能引发运动 | 用途 |
 |---|---:|---:|---|
+| `example_highlevel --iface IFACE --discover-only` | 否 | 否 | 发现远端设备、按 SN 去重，不选设备并直接退出 |
 | `example_highlevel --read-only` | 否 | 否 | High-level 状态、能力、传感器和 Walk 里程计查询 |
 | `example_highlevel` | 是 | 只有显式输入控制命令后才会 | High-level 交互 CLI；保持控制租约并分步测试动作和参数 |
 | `example_lowlevel` | 姿态/阻尼命令按需使能 | `stand` / `lie` 会 | Low-level 交互 CLI；状态检查、阻尼和站立/趴下纯位置控制 |
@@ -353,12 +397,12 @@ sudo env LD_LIBRARY_PATH="$LD_LIBRARY_PATH" \
 
 ## 文档导航
 
-- [SDK 运行注意事项](docs/runtime_notes.md)
+- [故障排查](docs/troubleshooting.zh-CN.md)
 - [`uniubi-docs` 开发入口](https://github.com/uniubi-ai/uniubi-docs)
 - [构建、安装和交叉编译](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/BUILD.zh-CN.md)
-- [High-level SDK API](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/uniubi_high_level_sdk.zh-CN.md)
-- [Low-level SDK API](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/uniubi_low_level_sdk.zh-CN.md)
-- [Media SDK API](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/uniubi_media_sdk.zh-CN.md)
+- [High-level C++ API](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/api-reference/cpp/high-level.zh-CN.md)
+- [Low-level C++ API](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/api-reference/cpp/low-level.zh-CN.md)
+- [MediaBus C++ API](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/api-reference/cpp/media.zh-CN.md)
 - [核心概念](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/core-concepts/README.zh-CN.md)
 
 DDS / ROS 2 协议直连属于 Advanced 集成路径，不是普通 C++ SDK 开发入口；需要时从 [`uniubi-docs` Advanced](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/advanced/README.zh-CN.md) 进入。

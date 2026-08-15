@@ -1,8 +1,8 @@
-# Runtime Notes
+# Troubleshooting
 
-[中文文档](runtime_notes.zh-CN.md)
+[中文文档](troubleshooting.zh-CN.md)
 
-This document records runtime behaviors that commonly cause integration mistakes in the C++ SDK. Complete interface documentation is maintained in [uniubi-docs](https://github.com/uniubi-ai/uniubi-docs).
+This document describes common C++ SDK integration problems and the checks or handling steps for them. See the C++ API references for [High-level](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/api-reference/cpp/high-level.md), [Low-level](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/api-reference/cpp/low-level.md), and [MediaBus](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/api-reference/cpp/media.md).
 
 ## High-level Actions Are Asynchronous
 

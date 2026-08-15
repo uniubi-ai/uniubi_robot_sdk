@@ -80,7 +80,7 @@ esac
 export LD_LIBRARY_PATH="/path/to/uniubi-sdk/lib/$SDK_ARCH${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 ```
 
-当前设备运行 SDK 示例需要 root 权限。不要只写 `sudo ./example`，否则 `sudo` 可能清理 `LD_LIBRARY_PATH`；以下命令显式传入运行库路径。
+当前设备上的板载 High-level、Low-level 和 MediaBus 示例需要 root 权限；板载运行不要只写 `sudo ./example`，否则 `sudo` 可能清理 `LD_LIBRARY_PATH`。外部 Linux x86_64 High-level 发现与 client 已验证可由普通用户运行。
 
 | 示例 | 行为 | 实机要求 |
 |---|---|---|
@@ -89,11 +89,40 @@ export LD_LIBRARY_PATH="/path/to/uniubi-sdk/lib/$SDK_ARCH${LD_LIBRARY_PATH:+:$LD
 | `example_lowlevel_tensorrt` | 输入 ONNX，每次启动现场构建 FP32 TensorRT engine，并以 50 Hz 运行 Low-level 策略 | 仅 Jetson Orin；启动只连接；吊架上先验证 `stand` / `lay`，空旷平整地面再验证 `walk`；急停可触达、有人值守 |
 | `example_media_frames` | 板内订阅并落盘媒体帧 | 仅 aarch64，媒体服务和 SHM 已就绪 |
 
-首次联调运行只读模式：
+High-level 既可作为 `aarch64` 程序在机器人板内运行，也可在外部 Linux x86_64 主机
+运行。板载单设备模式不需要 SN；首次只读联调使用板载 High-level 网卡 `eth0.100`：
 
 ```bash
 sudo env LD_LIBRARY_PATH="$LD_LIBRARY_PATH" \
-  ./build/examples/example_highlevel --read-only
+  ./build/examples/example_highlevel --iface eth0.100 --read-only
+```
+
+外部主机先用 `ip -brief link` 核对并输入能到达机器人的真实网卡，再执行只读发现；
+发现模式不会自动选设备：
+
+```bash
+read -r -p "Host interface that reaches robot: " UNIUBI_IFACE
+./build/examples/example_highlevel \
+  --iface "$UNIUBI_IFACE" --discover-only
+```
+
+发现回调在 SDK 初始化前注册；程序收集 5 秒并按 SN 去重，只有首个窗口完全没有回调时
+才再请求 5 秒。
+
+目标 device ID 有两种获取方式：
+
+1. 在 Uniubi App 中打开机器人的“基础信息”页面，直接查看 SN。
+2. 使用 SDK discovery。若返回多台机器人且已知目标 IP，检查每条结果的 `info` JSON，
+   用该 IP 匹配 `network.ether.ipv4Addr`、`network.wlan.ipv4Addr`、
+   `network.hotspot.ipv4Addr` 或 `network.mobile.ipv4Addr`，找到对应 SN。
+
+IP 只用于筛选 discovery 结果；`--device-id` 始终传筛选出的 SN，不能传 IP。输入真实 SN
+后，连接时同时显式传入两个真实值：
+
+```bash
+read -r -p "Device SN from discovery: " UNIUBI_DEVICE_SN
+./build/examples/example_highlevel \
+  --iface "$UNIUBI_IFACE" --device-id "$UNIUBI_DEVICE_SN" --read-only
 ```
 
 进入 CLI 后使用 `status`、`motors`、`odom 5`、`sensor 5` 做只读验证：
@@ -105,7 +134,7 @@ highlevel> sensor 5
 highlevel> odom 5
 ```
 
-`--read-only` 表示启动时不申请控制权；需要控制时显式执行 `take`。例如：
+`--read-only` 表示启动时不申请控制权；需要控制时显式执行 `take`。若直接以控制模式启动，板载命令使用 `--iface eth0.100`；外部主机必须继续保留 `--iface "$UNIUBI_IFACE"` 和 `--device-id "$UNIUBI_DEVICE_SN"`。例如：
 
 ```text
 highlevel> take
