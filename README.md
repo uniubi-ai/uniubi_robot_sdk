@@ -299,14 +299,14 @@ The default mode requests ownership after connecting but starts no action. `--re
 
 ```text
 highlevel> take
-highlevel> start walking
+highlevel> start walking {"lineVelocityX":0.0,"lineVelocityY":0.0,"velocity":0.0}
 highlevel> send 3 {"lineVelocityX":0.3,"lineVelocityY":0,"velocity":0}
 highlevel> stop
 highlevel> release
 highlevel> quit
 ```
 
-`start ACTION [JSON]` starts an action, `set JSON` continuously updates action parameters, and `send SECONDS JSON` sends parameters for a bounded duration and then automatically zeros walking velocity. `zero` only zeros walking velocity; it does not stop the action. `stop` stops the current action, `release` releases ownership, and `estop` requests an emergency stop. Enter `help` at any time for the current command list.
+`start ACTION [JSON]` starts an action, `set JSON` continuously updates action parameters, and `send SECONDS JSON` sends parameters for a bounded duration and then automatically zeros walking velocity. `zero` only zeros walking velocity; it does not stop the action. `stop` stops every current action, returns the effective action to zero-speed `walking`, and retains ownership. Starting `walking` with full zero parameters is the equivalent explicit transition. `release` releases ownership, and `estop` requests an emergency stop. Enter `help` at any time for the current command list.
 
 Before the first hardware run, use a clear area, keep the emergency stop within reach, and have an operator attend the robot. Never rely on the default interface or omit `--device-id` for an external connection.
 

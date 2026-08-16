@@ -12,7 +12,7 @@
 
 测试收尾或业务退出时，建议使用观测闭环：
 
-1. 调用 `stopAction()`。
+1. 调用 `stopAction()`；它会在保留控制权的同时将实际动作切回零速 `walking`。显式启动三个参数均为 0 的 `walking` 也可以完成同样的动作切换。
 2. 调用 `lieDown()` 或 `startAction("laying")`。
 3. 轮询 `queryMotionState()`，直到返回空对象（`{}`）或包含 `"action":"laying"`。
 4. 再调用 `releaseControl()`、`disconnect()` 和 `IMotionSdkService::shutdown()`。

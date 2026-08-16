@@ -293,14 +293,14 @@ sudo env LD_LIBRARY_PATH="$LD_LIBRARY_PATH" \
 
 ```text
 highlevel> take
-highlevel> start walking
+highlevel> start walking {"lineVelocityX":0.0,"lineVelocityY":0.0,"velocity":0.0}
 highlevel> send 3 {"lineVelocityX":0.3,"lineVelocityY":0,"velocity":0}
 highlevel> stop
 highlevel> release
 highlevel> quit
 ```
 
-`start ACTION [JSON]` 启动动作，`set JSON` 持续设置动作参数，`send SECONDS JSON` 限时发送参数并在结束后自动清零 walking 速度。`zero` 只清零 walking 速度、不会结束动作；`stop` 停止当前动作，`release` 释放控制权，`estop` 请求急停。随时输入 `help` 查看程序当前支持的完整命令。
+`start ACTION [JSON]` 启动动作，`set JSON` 持续设置动作参数，`send SECONDS JSON` 限时发送参数并在结束后自动清零 walking 速度。`zero` 只清零 walking 速度、不会结束动作；`stop` 会停止当前动作，将实际动作切回零速 `walking` 并继续保留控制权。显式启动三个参数均为 0 的 `walking` 也可以完成同样的动作切换；`release` 释放控制权，`estop` 请求急停。随时输入 `help` 查看程序当前支持的完整命令。
 
 首次实机运行前必须确保场地空旷、急停可触达并有人值守。外部连接不得依赖默认网卡，也不得省略 `--device-id`。
 

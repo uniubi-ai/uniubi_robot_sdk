@@ -12,7 +12,7 @@ A successful return from `startAction()`, `standUp()`, or `lieDown()` only means
 
 Use an observation-based closed loop when finishing a test or exiting an application:
 
-1. Call `stopAction()`.
+1. Call `stopAction()`; it returns the effective action to zero-speed `walking` while retaining control. Starting `walking` with full zero parameters is the equivalent explicit transition.
 2. Call `lieDown()` or `startAction("laying")`.
 3. Poll `queryMotionState()` until it returns an empty object (`{}`) or an object containing `"action":"laying"`.
 4. Then call `releaseControl()`, `disconnect()`, and `IMotionSdkService::shutdown()`.
