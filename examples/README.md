@@ -162,7 +162,9 @@ lowlevel> release
 lowlevel> quit
 ```
 
-Low-level has no `take` / `startControl` wrapper. `stand`, `lie`, and `damping` call `setMotionEnable(true)` as needed. `stand` / `lie` use the standard DV500 12-joint posture parameters, interpolate smoothly from live joint positions for two seconds, and then hold the posture. The program refuses to enable control when the layout does not match. Both `Ctrl+C` and `quit` release control and attempt to restore built-in motion control. This example may only be tested with all four feet suspended; do not run it directly on the ground.
+Low-level has no `take` / `startControl` wrapper. `stand`, `lie`, and `damping` call `setMotionEnable(true)` as needed. `stand` / `lie` use the standard DV500 12-joint posture parameters, interpolate smoothly from live joint positions for two seconds, and then hold the posture. The program refuses to enable control when the layout does not match. Both `Ctrl+C` and `quit` release control and disconnect; they do not restore built-in motion control in the same SDK process. This example may only be tested with all four feet suspended; do not run it directly on the ground.
+
+After `example_lowlevel` has completely exited, use the dedicated `release_control_to_dv500.sh` from the Python SDK examples to restore built-in/DV500 motion control from a separate process.
 
 ## C++ TensorRT Low-level Policy Example
 

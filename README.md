@@ -333,7 +333,7 @@ lowlevel> release
 lowlevel> quit
 ```
 
-`stand`, `lie`, and `damping` call `setMotionEnable(true)` as needed; the CLI does not wrap them in a High-level-style `take` command. `stand` and `lie` start from the live joint positions, interpolate smoothly to the target posture at 50 Hz over two seconds, and then hold it. `damping` zeros position stiffness while retaining velocity damping. `release` enters damping before disabling Low-level control. `quit` also attempts to restore the robot's built-in motion control.
+`stand`, `lie`, and `damping` call `setMotionEnable(true)` as needed; the CLI does not wrap them in a High-level-style `take` command. `stand` and `lie` start from the live joint positions, interpolate smoothly to the target posture at 50 Hz over two seconds, and then hold it. `damping` zeros position stiffness while retaining velocity damping. `release` enters damping before disabling Low-level control. `quit` releases and disconnects the Low-level session; it does not restore built-in motion control inside the same SDK process. Run the dedicated `release_control_to_dv500.sh` from the Python SDK examples only after this process has completely exited.
 
 The example uses the standard DV500 12-joint layout and posture parameters validated on the board. It refuses to enable posture control when the layout does not match. Keep the robot fully suspended with all feet clear throughout this Low-level example; do not run it directly on the ground. See the [Low-level SDK API](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/uniubi_low_level_sdk.md) for state requirements.
 

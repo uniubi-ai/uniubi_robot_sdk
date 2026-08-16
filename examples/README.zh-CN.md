@@ -161,7 +161,9 @@ lowlevel> release
 lowlevel> quit
 ```
 
-Low-level 没有 `take` / `startControl` 接口包装；`stand`、`lie` 和 `damping` 内部按需调用 `setMotionEnable(true)`。`stand` / `lie` 使用标准 DV500 12 关节姿态参数，从实时关节位置平滑插值 2 秒后持续保持。布局不匹配时程序会拒绝使能。`Ctrl+C` 和 `quit` 都会执行释放并尝试恢复内置运控。该示例只允许在四脚腾空条件下测试，不得直接落地运行。
+Low-level 没有 `take` / `startControl` 接口包装；`stand`、`lie` 和 `damping` 内部按需调用 `setMotionEnable(true)`。`stand` / `lie` 使用标准 DV500 12 关节姿态参数，从实时关节位置平滑插值 2 秒后持续保持。布局不匹配时程序会拒绝使能。`Ctrl+C` 和 `quit` 都只负责释放控制并断开，不在同一个 SDK 进程中恢复内置运控。该示例只允许在四脚腾空条件下测试，不得直接落地运行。
+
+等待 `example_lowlevel` 完全退出后，使用 Python SDK examples 中独立的 `release_control_to_dv500.sh`，以另一个进程恢复内置/DV500 运控。
 
 ## C++ TensorRT Low-level 策略示例
 

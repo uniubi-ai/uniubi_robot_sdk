@@ -132,7 +132,6 @@ public:
         }
         if (!client_->getMotorLayout(layout_)) fail("get motor layout");
         layoutSupported_ = validateLayout();
-        needsRestore_ = true;
         std::cout << "[PASS] connected; motor control is disabled and no pose has started\n";
         if (!layoutSupported_) {
             std::cout << "[WARN] pose commands require the standard DV500 12-joint layout\n";
@@ -160,16 +159,6 @@ public:
 
     void close() {
         releaseControl();
-        if (needsRestore_ &&
-            client_->getState() == static_cast<int32_t>(LLState::kConnected)) {
-            if (client_->restoreMotionControlMode()) {
-                std::cout << "[PASS] built-in motion control restored\n";
-                needsRestore_ = false;
-            } else {
-                std::cerr << "[WARN] restore motion control failed, error="
-                          << client_->getLastError() << '\n';
-            }
-        }
         client_->disconnect();
     }
 
@@ -582,14 +571,13 @@ private:
             << "  damping             enable zero stiffness with velocity damping\n"
             << "  release             damping, stop the controller and disable motor control\n"
             << "  estop               request emergency stop\n"
-            << "  quit                 release, restore built-in motion control and exit\n\n"
+            << "  quit                 release Low-level control and exit\n\n"
             << "No pose starts automatically. Pose commands enable Low-level control on demand.\n";
     }
 
     ClientPtr client_;
     MotorLayout layout_{};
     bool layoutSupported_ = false;
-    bool needsRestore_ = false;
 
     std::mutex stateMutex_;
     std::condition_variable stateChanged_;
