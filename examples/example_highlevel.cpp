@@ -557,6 +557,7 @@ private:
             << "  estop                        request emergency stop\n"
             << "  quit                         clear velocity, release control and exit\n\n"
             << "Examples:\n"
+            << "  take\n"
             << "  start walking\n"
             << "  send 3 {\"lineVelocityX\":0.3,\"lineVelocityY\":0,\"velocity\":0}\n"
             << "  odom 5\n"
