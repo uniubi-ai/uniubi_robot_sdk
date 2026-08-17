@@ -278,6 +278,9 @@ highlevel> quit
 真机申请控制权前，必须先关闭遥控器，或长按遥控器 `M` 键切换，直到听到“遥控器连接已断开”
 的语音提示。遥控器仍连接时，High-level 无法取得控制权；只读检查不要求断开遥控器。
 
+High-level 控制过程中如遇紧急情况，可再次按 `M` 键，直到听到“遥控器已连接”的语音提示，
+再开始使用遥控器接管。
+
 需要控制机器人时，不加 `--read-only` 启动。程序会获取 High-level 控制权，但不会自动启动动作。板载命令为：
 
 ```bash
@@ -331,6 +334,9 @@ lowlevel> quit
 ```
 
 `stand`、`lie` 和 `damping` 会按需调用 `setMotionEnable(true)`，CLI 不额外包装 High-level 风格的 `take` 命令。`stand` 和 `lie` 从实时关节位置开始，以 50 Hz 在 2 秒内平滑移动到目标姿态并持续保持。`damping` 清零位置刚度并保留速度阻尼，`release` 先进入阻尼再关闭 Low-level 控制，`quit` 还会尝试恢复机器人内置运控。
+
+Low-level 程序要接入遥控器输入时，遥控器必须处于已连接状态；若已断开，按 `M` 键直到听到
+“遥控器已连接”的语音提示。这个状态是接收遥控器输入的前置条件，不表示退出 Low-level 控制。
 
 该示例使用标准 DV500 12 关节布局和板端已验证的姿态参数；布局不匹配时会拒绝使能姿态控制。Low-level 示例测试期间必须始终保持机器狗四脚腾空且能够自由活动，不得直接放在地面执行。接口状态要求见 [Low-level SDK API](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/uniubi_low_level_sdk.zh-CN.md)。
 
