@@ -281,6 +281,8 @@ highlevel> quit
 
 ### High-level control validation
 
+Before requesting control on a real robot, disconnect the remote controller: either power it off, or press and hold its `M` button until the robot announces “遥控器连接已断开” (remote controller disconnected). High-level cannot obtain ownership while the remote controller remains connected. Read-only checks do not require this step.
+
 To control the robot, start without `--read-only`. The program obtains High-level control ownership but still does not start an action automatically. On-board:
 
 ```bash
