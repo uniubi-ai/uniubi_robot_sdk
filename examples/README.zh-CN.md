@@ -145,7 +145,7 @@ highlevel> release
 highlevel> quit
 ```
 
-程序不会自动启动动作。`send` 到时后会清零 walking 速度；正常退出时也会清零速度并释放控制权。输入 `help` 可查看 `set`、`zero`、`estop` 等完整命令。
+程序不会自动启动动作。`send` 到时后会清零 walking 速度；正常退出时也会清零速度并释放控制权。当前清理路径不会自动调用 `stopAction()`，清零 walking 参数也不会结束非 walking 动作；如果动作仍可能处于活动状态，应先显式输入 `stop`，再输入 `release`。输入 `help` 可查看 `set`、`zero`、`estop` 等完整命令。
 
 Low-level CLI 启动后只连接，不使能控制。推荐按下面顺序验证：
 

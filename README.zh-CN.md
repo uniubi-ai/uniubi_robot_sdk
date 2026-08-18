@@ -308,6 +308,8 @@ highlevel> quit
 
 `start ACTION [JSON]` 启动动作，`set JSON` 持续设置动作参数，`send SECONDS JSON` 限时发送参数并在结束后自动清零 walking 速度。`zero` 只清零 walking 速度、不会结束动作；`stop` 会停止当前动作，将实际动作切回零速 `walking` 并继续保留控制权。显式启动三个参数均为 0 的 `walking` 也可以完成同样的动作切换；`release` 释放控制权，`estop` 请求急停。随时输入 `help` 查看程序当前支持的完整命令。
 
+当前 CLI 的清理路径只会清零 walking 参数并释放控制权，不会自动调用 `stopAction()`。如果动作仍可能处于活动状态，应先显式输入 `stop`，再输入 `release`。
+
 首次实机运行前必须确保场地空旷、急停可触达并有人值守。外部连接不得依赖默认网卡，也不得省略 `--device-id`。
 
 ### Low-level 关节控制验证
@@ -333,7 +335,7 @@ lowlevel> release
 lowlevel> quit
 ```
 
-`stand`、`lie` 和 `damping` 会按需调用 `setMotionEnable(true)`，CLI 不额外包装 High-level 风格的 `take` 命令。`stand` 和 `lie` 从实时关节位置开始，以 50 Hz 在 2 秒内平滑移动到目标姿态并持续保持。`damping` 清零位置刚度并保留速度阻尼，`release` 先进入阻尼再关闭 Low-level 控制，`quit` 还会尝试恢复机器人内置运控。
+`stand`、`lie` 和 `damping` 会按需调用 `setMotionEnable(true)`，CLI 不额外包装 High-level 风格的 `take` 命令。`stand` 和 `lie` 从实时关节位置开始，以 50 Hz 在 2 秒内平滑移动到目标姿态并持续保持。`damping` 清零位置刚度并保留速度阻尼，`release` 先进入阻尼再关闭 Low-level 控制，`quit` 只释放并断开 Low-level 会话，不在同一个 SDK 进程中恢复机器人内置运控。进程完全退出后，如需恢复内置运控，再运行 Python SDK examples 中独立的 `release_control_to_dv500.sh`。
 
 Low-level 程序要接入遥控器输入时，遥控器必须处于已连接状态；若已断开，按 `M` 键直到听到
 “遥控器已连接”的语音提示。这个状态是接收遥控器输入的前置条件，不表示退出 Low-level 控制。

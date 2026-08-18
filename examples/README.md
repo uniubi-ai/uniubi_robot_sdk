@@ -146,7 +146,7 @@ highlevel> release
 highlevel> quit
 ```
 
-The program never starts an action automatically. When `send` expires, it zeros walking velocity; normal exit also zeros velocity and releases ownership. Enter `help` for the complete command set, including `set`, `zero`, and `estop`.
+The program never starts an action automatically. When `send` expires, it zeros walking velocity; normal exit also zeros velocity and releases ownership. The current cleanup path does not call `stopAction()` automatically, and zeroing walking parameters does not end a non-walking action; issue `stop` explicitly before `release` when an action may still be active. Enter `help` for the complete command set, including `set`, `zero`, and `estop`.
 
 The Low-level CLI only connects at startup and does not enable control. Use this validation sequence:
 
