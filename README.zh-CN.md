@@ -412,6 +412,7 @@ sudo env LD_LIBRARY_PATH="$LD_LIBRARY_PATH" \
 
 ## 文档导航
 
+- [自定义音频：通过 URL 上传并播放](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/how-to/use-media-and-device-io.zh-CN.md#自定义音频通过-url-上传并播放)：Orin/PC 提供 HTTP URL，DV500 下载入库，等待音频 ID 出现后再播放；包含 Python 完整示例。
 - [故障排查](docs/troubleshooting.zh-CN.md)
 - [`uniubi-docs` 开发入口](https://github.com/uniubi-ai/uniubi-docs)
 - [构建、安装和交叉编译](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/BUILD.zh-CN.md)

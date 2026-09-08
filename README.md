@@ -408,6 +408,7 @@ On exit, the program calls `setMotionEnable(false)` only when needed, then disco
 
 ## Documentation
 
+- [Custom audio: upload by URL and play](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/how-to/use-media-and-device-io.md#custom-audio-upload-by-url-and-play): serve an HTTP URL from Orin/PC, let DV500 import the file, and wait for its audio ID before playback; includes a complete Python example.
 - [Troubleshooting](docs/troubleshooting.md)
 - [`uniubi-docs` development entry point](https://github.com/uniubi-ai/uniubi-docs)
 - [Build, installation, and cross-compilation](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/BUILD.md)
