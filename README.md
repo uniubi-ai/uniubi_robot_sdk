@@ -4,6 +4,10 @@
 
 The public development repository for the Uniubi Robot C++ motion-control SDK. It provides public headers, C++ examples, build entry points, and prebuilt runtime libraries for each supported architecture. The complete development workflow and API documentation are maintained in [`uniubi-docs`](https://github.com/uniubi-ai/uniubi-docs).
 
+## Robot Version Requirement
+
+The robot version must be **1.01.005 or later** to use this SDK. Upgrade robots running an earlier version before use.
+
 ## Build and Install
 
 This repository contains prebuilt `librobotMotionSdk.so` and its companion runtime libraries. The CMake project builds the C++ examples and validates the development environment; it does not rebuild the SDK runtime libraries.
