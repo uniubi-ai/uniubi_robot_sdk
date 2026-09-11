@@ -426,3 +426,7 @@ DDS / ROS 2 协议直连属于 Advanced 集成路径，不是普通 C++ SDK 开�
 ## 许可证
 
 本仓库中的 UniUbi 原创代码、头文件、示例和文档使用 Apache License 2.0。预编译库和第三方组件按各自条款授权。详见 [LICENSE](LICENSE)、[NOTICE](NOTICE) 和 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+
+### NV21 与四路 PCM 采集
+
+使用 `--capture-all` 保存每路摄像头 5 张 NV21 图像和四路各 20 秒 PCM。配置模板、命令与验收方法：[NV21 与四路 PCM 采集](docs/media-capture.zh-CN.md)。

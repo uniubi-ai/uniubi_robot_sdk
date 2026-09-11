@@ -422,3 +422,7 @@ Direct DDS / ROS 2 protocol integration is an Advanced path rather than the stan
 ## License
 
 Original UniUbi code, headers, examples, and documentation in this repository are licensed under the Apache License 2.0. Prebuilt libraries and third-party components are licensed under their respective terms. See [LICENSE](LICENSE), [NOTICE](NOTICE), and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+### NV21 and four-channel PCM capture
+
+Use `--capture-all` to save five NV21 images per camera and four 20-second PCM files. Configuration template, commands and validation: [NV21 and four-channel PCM capture](docs/media-capture.md).

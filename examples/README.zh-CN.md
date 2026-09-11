@@ -229,3 +229,7 @@ lowlevel> quit
 `UNIUBI_CUDA_ROOT` 提供与目标 JetPack 匹配的 aarch64 头文件和链接库。上面的
 NVIDIA APT 交叉包路径和 Orin 原生构建路径均已验证；SDK 仓库不分发 NVIDIA
 二进制库。
+
+### NV21 与四路 PCM 采集
+
+使用 `--capture-all` 保存每路摄像头 5 张 NV21 图像和四路各 20 秒 PCM。配置模板、命令与验收方法：[NV21 与四路 PCM 采集](../docs/media-capture.zh-CN.md)。

@@ -219,3 +219,7 @@ Do not execute `walk` with all four feet suspended. During both stages, keep the
 On exit, this policy example calls `setMotionEnable(false)` only if it is already in the prepared state, then disconnects and shuts down the SDK. It does not call `emergencyStop()` or `restoreMotionControlMode()`. This exit behavior differs from the generic `example_lowlevel` above and must not be conflated with it.
 
 The example is disabled by default for cross-compilation. When `-DBUILD_SDK_TENSORRT_EXAMPLE=ON` is set explicitly, `UNIUBI_TENSORRT_ROOT` and `UNIUBI_CUDA_ROOT` must provide aarch64 headers and link libraries that match the target JetPack. Both the NVIDIA APT cross-package path above and native Orin build path have been validated. The SDK repository does not redistribute NVIDIA binary libraries.
+
+### NV21 and four-channel PCM capture
+
+Use `--capture-all` to save five NV21 images per camera and four 20-second PCM files. Configuration template, commands and validation: [NV21 and four-channel PCM capture](../docs/media-capture.md).
