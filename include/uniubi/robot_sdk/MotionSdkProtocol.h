@@ -122,7 +122,7 @@ typedef enum {
     motorOverVoltage     = 6,       ///< 过压
     motorPGAbnormality   = 0x3B,    ///< PG 异常
     motorHWUndervoltage  = 0x3C,    ///< 硬件欠压
-    motorCommError      = 0x3F,    ///< 通信错误
+    motorCommError       = 0x3F,    ///< 通信错误
     motorControlOffline  = 1 << 6,  ///< 控制板离线
     controlMotorNotEnable,          ///< 未使能
     motorControlNotReady,           ///< 控制未就绪
@@ -267,6 +267,7 @@ struct MotionOdometry {
     float                  yawSpeed = 0.0f;     /**< 偏航角速度,rad/s */
     uint32_t               epoch = 0;           /**< 原点代次 */
 };
+
 static_assert(sizeof(MotionOdometry) == 40, "MotionOdometry size invalid");
 
 struct SensorObserved {
@@ -305,7 +306,7 @@ struct MotorCtrlAction {
 static_assert(sizeof(MotorCtrlAction) == 388, "MotorCtrlAction size invalid");
 
 struct LowLevelMotionObserved {
-    uint8_t                systemSta;                       /// 系统状态
+    uint8_t                systemSta = 0;                   /// 系统状态
     uint8_t                standby = true;                  /// 是否运控已经待机
     uint8_t                setupReady = false;              /// 运控是否准备完成
     uint32_t               motorNum;                        /// 电机数据

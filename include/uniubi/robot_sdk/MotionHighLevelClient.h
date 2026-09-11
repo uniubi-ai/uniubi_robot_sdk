@@ -50,7 +50,7 @@ public:
         kInvalidParam,          ///< 入参非法（如动作参数 JSON 解析失败）
     } HighLevelError;
     /**
-     * 运控观测量回调；observed 上报开启后随帧推送（含 power）
+     * 运控观测量回调；observed 上报开启后随帧推送（含 power 和 trc）
      */
     using MotionObservedCallback = std::function<void(const LowLevelMotionObserved& obs)>;
     /** 传感器观测回调；包含 GPS、UWB 和里程计。 */
@@ -127,7 +127,7 @@ public:
      */
     virtual IMediaBusClient::Ptr createMediaBusClient() = 0;
     /**
-     * @brief 注册运控观测量回调（observed 上报开启后随帧推送，含 power）
+     * @brief 注册运控观测量回调（observed 上报开启后随帧推送，含 power 和 trc）
      */
     virtual void setMotionObservedCallback(MotionObservedCallback cb) = 0;
     /**
@@ -259,7 +259,9 @@ public:
     /**
      * @brief 观测数据上报（任何已 connect 状态均可），对应 RPC robotAppService.setMotionObservedEnable
      *        服务端 hook 不做鉴权，SDK 侧也不强校验持权。
-     * @param json 设置配置
+     * @param json 设置配置：motionEnable、sensorEnable、trcEnable（bool）。
+     * @note 接收手柄需同时开启 motionEnable 和 trcEnable；从回调 obs.trc 读取，先检查 valid。
+     *       trcEnable 关闭时 trc 清零；观测不申请控制权。
      * @param ret  当前配置
      */
     virtual bool setObservedEnable(const std::string& json,std::string& ret,uint32_t timeoutMs = 5000) = 0;

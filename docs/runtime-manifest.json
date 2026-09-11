@@ -1,0 +1,855 @@
+{
+  "source_commit": "454f49b3e90e698fc47b7d78a43b4a1be40f8510",
+  "build_commit": "e0e9b3acd220195a9511145d0978aca5161bc6c3",
+  "trc_change": "8b6aff2b",
+  "source_tracked_diff": ".gitignore | 1 +\n Build      | 2 +-\n 2 files changed, 2 insertions(+), 1 deletion(-)",
+  "build_tracked_diff": "",
+  "idl_sha256": {
+    "BrainMotionState.idl": "8df0e9445ecfa6ef9b28c6ea73d85d7de8f500172c3e4c1e9e446a17876d7c28",
+    "BrainSmartState.idl": "2f50d19812f90ac3403be83bb9722ecb30a98994d33209b8e69006801d5379ad",
+    "CPP/action_msgs/msg/GoalInfo.cpp": "d058bb40b8080e7872b2ee429c880335222aa31ef8ae32d78282c34ff40c7fec",
+    "CPP/action_msgs/msg/GoalInfo.hpp": "c683e977f9964963239680aa105ed66cbeeb3ccb30b22c320d2cb8710fe69981",
+    "CPP/action_msgs/msg/GoalStatus.cpp": "1a681960e2e551d1d3b8158bce7082214f19a0afdf71b866dfc2fa466de6e257",
+    "CPP/action_msgs/msg/GoalStatus.hpp": "389b31652c0e211dbf6430073104ef61daf46b75609959fde0e2961965a80fd7",
+    "CPP/action_msgs/msg/GoalStatusArray.cpp": "d45aaad4f1aabdc3a68db5fc05b283c0e740dd1199133469c11163bd63863983",
+    "CPP/action_msgs/msg/GoalStatusArray.hpp": "adf2453814373a192a8a3d088bacd6f249c2cfdceeee81c69cb69dec54f88988",
+    "CPP/action_msgs/srv/CancelGoal_Request.cpp": "d4b5d350ed52bb5fd30958ac603b02b84647a17d23e8d085ff9c5483491105a2",
+    "CPP/action_msgs/srv/CancelGoal_Request.hpp": "6d82f9276730a2d97a39874e8cfc006a9a3414a556bdeb43cf7ecb06925956e6",
+    "CPP/action_msgs/srv/CancelGoal_Response.cpp": "24940fc62abe842f9bff44574a3c06df6c9090c8c6ebca3fe1e276e8c36b961d",
+    "CPP/action_msgs/srv/CancelGoal_Response.hpp": "1b35c05b722934dcbd1bdae2a5699f04e2e198e1aef404f171095fe37d0edcbd",
+    "CPP/builtin_interfaces/msg/Duration.cpp": "31e0bb3a52177f1f05a5e2dd3e54d216b0fbed51d76fb514085a472c8e885540",
+    "CPP/builtin_interfaces/msg/Duration.hpp": "0b0a43a49612d11ba90977e55442a383bf774bfa7f361ad39fb03b719f7c9bc8",
+    "CPP/builtin_interfaces/msg/Time.cpp": "71b59fb247761b0f8193c477b5e60b89e386c9aceb4cd5a4cd2801b17bfb1f4f",
+    "CPP/builtin_interfaces/msg/Time.hpp": "389d47e657b272483ffa632500913cb0836191369e557002f1f630080441af90",
+    "CPP/rmw_interfaces/msg/Header.cpp": "11f98a4f99e9e8f26a47ce0d11582b55bc20475621fafd3ad6029e6e92cca96b",
+    "CPP/rmw_interfaces/msg/Header.hpp": "0ffffd0dae82e11bcbf6407a074ba6599c87541044a7c679fcdadcf47bcf0ad1",
+    "CPP/unique_identifier_msgs/msg/UUID.cpp": "670f8d15c3aaf25caa7c14476e8421fd6a7f9fe4314fa785548a4e0eef0d76fd",
+    "CPP/unique_identifier_msgs/msg/UUID.hpp": "8b3cffed2bffebc36fab3360bf8ca740c00e8dd7cfb193bd7fe6697829d3d05f",
+    "Cluster/ClusterControl.cpp": "c1bcc3e5b1564b860b165689ab025c4ff5e22bf9231446684acf035773f696e1",
+    "Cluster/ClusterControl.hpp": "a83c90ae1272bb8fa355a07dfd90bd8757aa1e559586d1ea53034b368a2a1421",
+    "ClusterControl.idl": "b8939aa31866d619375326b8dceaf5fb5a76b9b33043c99e97c066e5a0a26c90",
+    "EventMessage.idl": "35d2ea11574c8722f8ec12cb60305bc99aa65a7bd6dda00c49e051909b7b0760",
+    "Message/EventMessage.cpp": "acaa8f8845efe3d4e6917e564a03e1bc0f27216f634355a43e6c54451b2ece8f",
+    "Message/EventMessage.hpp": "7323106028bbf582cdd2eefe4053801200b6580177a707d21fef7b45b90fb825",
+    "Message/RPCMessage.cpp": "1ad2eefadb0e64473de76b425f5b8bd535d5d6f0b36142e7210e39df3cfa9d8a",
+    "Message/RPCMessage.hpp": "0fb3cef55d86dad235bdf0bd6a8769f348ac292d256ecad158886e434487c495",
+    "Message/Request.cpp": "8c698866299af6b02000db9f1a2ec58b53a8916722b8ad387a5a645f9fdcf42d",
+    "Message/Request.hpp": "47356f46ec6c7e916a9ea1b2dbd21ca0135f2b3d214568384c0de98dbac22303",
+    "Motion/BrainMotionState.cpp": "600cf2eb11a89d95e17374e3d658308baba9b402fb9fdaeb0edb27a409d0d6b4",
+    "Motion/BrainMotionState.hpp": "47fc48b6b1fba3fbba3f762c532a30eff58d188d59500545d06382aa4157edbc",
+    "Motion/BrainSmartState.cpp": "a945791efc3e09894bac6d8d5bf57ed909a1c4724695089569c138806efa0df7",
+    "Motion/BrainSmartState.hpp": "b56fb671bafb8afb34021402afc37483409072e8613c5212864042d82b153edf",
+    "Motion/MotionCmd.cpp": "19563b4a8dbda3e97a83cc3bf3da5c95497d6a7b529f4c5a06124d7bc069f8f6",
+    "Motion/MotionCmd.hpp": "cbf0f1cd9609f514c829ae57b744420f82638d2769da99d8dc0b4ec6ee5ab8ff",
+    "Motion/MotionObserved.cpp": "a68957dbc29cf7362b13cd3a5360828bf2d71b965f8187dad3a331af2695483e",
+    "Motion/MotionObserved.hpp": "6185248728b36d172dc93ee4298d16bf5c7762d3f70a39904af92e5eb3501819",
+    "Motion/MotorState.cpp": "24c19c152fc03e46a1347f9f256052beba9e5a041b2723da0c8f50f64c16ca02",
+    "Motion/MotorState.hpp": "49ba65429b8e4e5ad68fc0ac29478ee9a12da49796ec929ba221150e5d8a9d4e",
+    "Motion/RemoteControl.cpp": "b880cb3071a437bf2a4c1fb781ce0686e4b19bf72ff5e33794b8d4b382a03ed2",
+    "Motion/RemoteControl.hpp": "a2b520ad2bcadd6427c1f7399534131c1c0d0681ac860e30a78e1205b7a91e53",
+    "Motion/SensorObserved.cpp": "d05cbde20bcb7e70e5313325dc0fec427f91562b2d9a6a7bb39d4ace3cf15303",
+    "Motion/SensorObserved.hpp": "9def129e1ca9cf69c8567916385e03ca9dcf37da3c014852845f8cd90f74b1fa",
+    "MotionCmd.idl": "5720fec29b171bd9874ce27be8a2b872ab31bde37f8ac771f8fcd4291f906372",
+    "MotionObserved.idl": "15ba16afb31fce64aa50e7037ecad9767e622f12e10f869be733c641f7faca42",
+    "MotorState.idl": "74115bc3288dc4051c720bdcb29e39ad6fa324064ce31779d0819afb03a60f2e",
+    "ROS2/action_msgs/msg/GoalInfo.idl": "75a3970ae4820fbf2be4c41add058f64e60f4ebda1d8247e3f0e62ceb5fedfdf",
+    "ROS2/action_msgs/msg/GoalStatus.idl": "47bcf145484cde1c61210c11901dcca018e1429724ba4373934c5bbef0f68a64",
+    "ROS2/action_msgs/msg/GoalStatusArray.idl": "1fc294f8d19b989f43481a6a55f4f29079a0e8fc4cdb38d4f833336e7702d074",
+    "ROS2/action_msgs/srv/CancelGoal_Request.idl": "b4f5f9d188f530fba35623772da979b02f8b1d53a4012554db24429b87410c6e",
+    "ROS2/action_msgs/srv/CancelGoal_Response.idl": "d731109b6f9a490ba8dc49d9db2e687e52f35c309af09ee4eea37b2d8476bbab",
+    "ROS2/builtin_interfaces/msg/Duration.idl": "73ffa7c922aa071e14513f7e685bd07c78a5b3989a1bf5152940cb429c909331",
+    "ROS2/builtin_interfaces/msg/Time.idl": "d5aa5691624dd3126cdbe08f2899e42e3f2188e554c02769d41ccd755c422d37",
+    "ROS2/rmw_interfaces/msg/Header.idl": "d0e8c1ba31b2b5720eb44eaede26cba6399422d7af989423fa343e9add822295",
+    "ROS2/std_msgs/msg/String.idl": "96b7ae6a3037378d8ecf4f46237d1d7476034b5e43bcfe6ec5ec1674162dd1e2",
+    "ROS2/unique_identifier_msgs/msg/UUID.idl": "d8e2b5752859d0356ea20cd3bf7957e8b365442d59fe28828a7a26dde7ac3101",
+    "RPCMessage.idl": "609b77e471f0da9a6123f0c49315c990a54a1dc3b39fb485ea38ed327a1f5eda",
+    "RemoteControl.idl": "44cdc1bf9a35257514ad297f5181d263d4004a33e1dc32e9a4794d39b3b5f925",
+    "Request.idl": "03819de8e2cb3f4f72e37db766b34a4e8a845fe81b4eee9ed4a7b1eb7ff90b4e",
+    "SensorObserved.idl": "69b4841b1c250041e9dc5f3a9d1aaab6e9938363526ae75cba1992675d184159"
+  },
+  "public_header_sha256": {
+    "uniubi/robot_sdk/Media/Define.h": "1dd19987c984a7760a6a0833c5a9da82d199de21e65cc87ce10358c72b243827",
+    "uniubi/robot_sdk/Media/FrameInfo.h": "18cc7951e89643ec7955b2d96f6b9c9941f6bce8023a0b28f66ee5e3a2a20695",
+    "uniubi/robot_sdk/Media/MediaBuffer.h": "513da6ba112811780df4eefa565c3f9c9c78b9c996e6b6401e95c1ef08f4194b",
+    "uniubi/robot_sdk/Media/MediaFrame.h": "a889ecb73ac18a13f27af603ebf867e4468cad050f104c94178f2c922e004f6b",
+    "uniubi/robot_sdk/MediaBusClient.h": "ca140f0d2c0426652e8e4cbd6545be4173b3ed90e466a285262de824891acba7",
+    "uniubi/robot_sdk/Memory/Packet.h": "3bbfaca12b815c1abbb1a5550fd33726143299f988ce65a706408e1c35e05934",
+    "uniubi/robot_sdk/MotionHighLevelClient.h": "19cd93843c09c274d9be201aa733fca71940c261ae3faa21ed23d613205a5456",
+    "uniubi/robot_sdk/MotionLowLevelClient.h": "8cb823c410b6b1ceea346fb642112abdfd54f6952ad1a86174ad27bd14dfc561",
+    "uniubi/robot_sdk/MotionSdkProtocol.h": "7394b2a7056082803881de17a8cf0a053f638f6be54ddbafcf6bac2e221f0290",
+    "uniubi/robot_sdk/MotionSdkService.h": "61610cacceff90969197aa33c754d62aa7cc5a6220c3475d80290d763f1e0890",
+    "uniubi/robot_sdk/UBase/Define.h": "5966ce785068d0c26cdaeed548fbf818d5913a99715685a437bad092a5a596cc",
+    "uniubi/robot_sdk/UBase/Delegate.h": "18c3a3a36f473d06ad4595e4952b7cc59a7ec5abec5569d50df65001a7a20af0"
+  },
+  "libraries": {
+    "x86_64": {
+      "libacl.so": {
+        "sha256": "5ee1a720d306306cd883c1503702ea88fdc58733d18a4ef0bb070157f7f8819b",
+        "needed": [
+          "libc.so.6"
+        ]
+      },
+      "libacl.so.1": {
+        "sha256": "5ee1a720d306306cd883c1503702ea88fdc58733d18a4ef0bb070157f7f8819b",
+        "needed": [
+          "libc.so.6"
+        ]
+      },
+      "libacl.so.1.1.2302": {
+        "sha256": "5ee1a720d306306cd883c1503702ea88fdc58733d18a4ef0bb070157f7f8819b",
+        "needed": [
+          "libc.so.6"
+        ]
+      },
+      "libattr.so": {
+        "sha256": "251a0f88628a9f35cb4d6e63f12990182abf9ac4538b34d31ce0d87fdc8a4c82",
+        "needed": [
+          "libc.so.6"
+        ]
+      },
+      "libattr.so.1": {
+        "sha256": "251a0f88628a9f35cb4d6e63f12990182abf9ac4538b34d31ce0d87fdc8a4c82",
+        "needed": [
+          "libc.so.6"
+        ]
+      },
+      "libattr.so.1.1.2502": {
+        "sha256": "251a0f88628a9f35cb4d6e63f12990182abf9ac4538b34d31ce0d87fdc8a4c82",
+        "needed": [
+          "libc.so.6"
+        ]
+      },
+      "libcrypto.so": {
+        "sha256": "8c48b64d7cddaaff80cb2eb59cbd2e00aefb18b09c437d74ca7be0c0336529d4",
+        "needed": [
+          "libc.so.6"
+        ]
+      },
+      "libcrypto.so.1.1": {
+        "sha256": "8c48b64d7cddaaff80cb2eb59cbd2e00aefb18b09c437d74ca7be0c0336529d4",
+        "needed": [
+          "libc.so.6"
+        ]
+      },
+      "libddsc.so": {
+        "sha256": "fdc937ee5eb28d12e563b8f849beafdb24d97cc6df967466c43ae5ac57f4c4d2",
+        "needed": [
+          "libiceoryx_binding_c.so",
+          "libc.so.6",
+          "ld-linux-x86-64.so.2"
+        ]
+      },
+      "libddsc.so.0": {
+        "sha256": "fdc937ee5eb28d12e563b8f849beafdb24d97cc6df967466c43ae5ac57f4c4d2",
+        "needed": [
+          "libiceoryx_binding_c.so",
+          "libc.so.6",
+          "ld-linux-x86-64.so.2"
+        ]
+      },
+      "libddsc.so.0.10.5": {
+        "sha256": "fdc937ee5eb28d12e563b8f849beafdb24d97cc6df967466c43ae5ac57f4c4d2",
+        "needed": [
+          "libiceoryx_binding_c.so",
+          "libc.so.6",
+          "ld-linux-x86-64.so.2"
+        ]
+      },
+      "libddscxx.so": {
+        "sha256": "9a80c2c102dd89163ea46240345c6cc88c980aa889d563ac70c0667e97b483a9",
+        "needed": [
+          "libddsc.so.0",
+          "libstdc++.so.6",
+          "libgcc_s.so.1",
+          "libc.so.6"
+        ]
+      },
+      "libddscxx.so.0": {
+        "sha256": "9a80c2c102dd89163ea46240345c6cc88c980aa889d563ac70c0667e97b483a9",
+        "needed": [
+          "libddsc.so.0",
+          "libstdc++.so.6",
+          "libgcc_s.so.1",
+          "libc.so.6"
+        ]
+      },
+      "libddscxx.so.0.10.5": {
+        "sha256": "9a80c2c102dd89163ea46240345c6cc88c980aa889d563ac70c0667e97b483a9",
+        "needed": [
+          "libddsc.so.0",
+          "libstdc++.so.6",
+          "libgcc_s.so.1",
+          "libc.so.6"
+        ]
+      },
+      "libiceoryx_binding_c.so": {
+        "sha256": "71d206c36aca277944d9658ca3458a9a1b774c6e948ae82cdaf1903f397d5502",
+        "needed": [
+          "libstdc++.so.6",
+          "libiceoryx_posh.so",
+          "libiceoryx_hoofs.so",
+          "libc.so.6"
+        ]
+      },
+      "libiceoryx_hoofs.so": {
+        "sha256": "42103048d62dcddce5eb0b06d9f18389343bd6d367515cffd8cfd49b43d6b8e1",
+        "needed": [
+          "libiceoryx_platform.so",
+          "libacl.so.1",
+          "libstdc++.so.6",
+          "libgcc_s.so.1",
+          "libc.so.6"
+        ]
+      },
+      "libiceoryx_platform.so": {
+        "sha256": "5e60dbffb1a026a0eadb78db98d95b4414d056b46a682d9526ce7cfb39c06f57",
+        "needed": [
+          "libc.so.6"
+        ]
+      },
+      "libiceoryx_posh.so": {
+        "sha256": "558b7ee795cd0bf454b626d907468db8f258b8a848f2a2c067ae7c8c4334c6b5",
+        "needed": [
+          "libiceoryx_hoofs.so",
+          "libstdc++.so.6",
+          "libc.so.6"
+        ]
+      },
+      "libmediaBus.so": {
+        "sha256": "02076aedeca87846fd452b4f9270c04b79d845233c330a4349b9f1190bf23d7e",
+        "needed": [
+          "libudbus.so",
+          "libubase.so",
+          "libstdc++.so.6",
+          "libgcc_s.so.1",
+          "libc.so.6"
+        ]
+      },
+      "librobotMotionSdk.so": {
+        "sha256": "3fd04ada71af3bcb4465f5d076952622963c610e7131be07ac12df330aa993a9",
+        "needed": [
+          "libudbus.so",
+          "libubase.so",
+          "libddscxx.so.0",
+          "libddsc.so.0",
+          "libstdc++.so.6",
+          "libgcc_s.so.1",
+          "libc.so.6",
+          "ld-linux-x86-64.so.2"
+        ]
+      },
+      "libubase.so": {
+        "sha256": "0e8e647c434dcbfbf57c2e2812d9891491262c862e69db0ab05b1a7f78a251e3",
+        "needed": [
+          "libstdc++.so.6",
+          "libm.so.6",
+          "libgcc_s.so.1",
+          "libc.so.6",
+          "ld-linux-x86-64.so.2"
+        ]
+      },
+      "libudbus.so": {
+        "sha256": "5e573b6db52300e6b6a95d915890b6d4f45a259d94aba0eaec9718d87aa84f8f",
+        "needed": [
+          "libubase.so",
+          "libddscxx.so.0",
+          "libddsc.so.0",
+          "libstdc++.so.6",
+          "libgcc_s.so.1",
+          "libc.so.6",
+          "ld-linux-x86-64.so.2"
+        ]
+      },
+      "libuutils.so": {
+        "sha256": "4bd7cded6e27a05390645433ecae63f89b6d6bd063700c5794068fe103e94549",
+        "needed": [
+          "libz.so.1",
+          "libcrypto.so.1.1",
+          "libstdc++.so.6",
+          "libgcc_s.so.1",
+          "libc.so.6"
+        ]
+      },
+      "libz.so": {
+        "sha256": "54ea984fdd26da37385a7d16fc6ff516369aee676b43799bc081b59b614f3d29",
+        "needed": [
+          "libc.so.6"
+        ]
+      },
+      "libz.so.1": {
+        "sha256": "54ea984fdd26da37385a7d16fc6ff516369aee676b43799bc081b59b614f3d29",
+        "needed": [
+          "libc.so.6"
+        ]
+      },
+      "libz.so.1.2.11": {
+        "sha256": "54ea984fdd26da37385a7d16fc6ff516369aee676b43799bc081b59b614f3d29",
+        "needed": [
+          "libc.so.6"
+        ]
+      }
+    },
+    "aarch64": {
+      "libacl.so": {
+        "sha256": "3dc64516cbd167ceb871aa722dcb049dbc3fa59bf8430157c53f2be14bc0a75e",
+        "needed": [
+          "libattr.so.1",
+          "libc.so.6",
+          "ld-linux-aarch64.so.1"
+        ]
+      },
+      "libacl.so.1": {
+        "sha256": "3dc64516cbd167ceb871aa722dcb049dbc3fa59bf8430157c53f2be14bc0a75e",
+        "needed": [
+          "libattr.so.1",
+          "libc.so.6",
+          "ld-linux-aarch64.so.1"
+        ]
+      },
+      "libacl.so.1.1.2302": {
+        "sha256": "3dc64516cbd167ceb871aa722dcb049dbc3fa59bf8430157c53f2be14bc0a75e",
+        "needed": [
+          "libattr.so.1",
+          "libc.so.6",
+          "ld-linux-aarch64.so.1"
+        ]
+      },
+      "libattr.so": {
+        "sha256": "d24b3105b7038235950cdd0a14e02e391792cbe1fe26091dddece0c418c184e3",
+        "needed": [
+          "libc.so.6",
+          "ld-linux-aarch64.so.1"
+        ]
+      },
+      "libattr.so.1": {
+        "sha256": "d24b3105b7038235950cdd0a14e02e391792cbe1fe26091dddece0c418c184e3",
+        "needed": [
+          "libc.so.6",
+          "ld-linux-aarch64.so.1"
+        ]
+      },
+      "libattr.so.1.1.2501": {
+        "sha256": "d24b3105b7038235950cdd0a14e02e391792cbe1fe26091dddece0c418c184e3",
+        "needed": [
+          "libc.so.6",
+          "ld-linux-aarch64.so.1"
+        ]
+      },
+      "libcrypto.so": {
+        "sha256": "1606d2c56dd0a52c829d8428ac4019d3085c157c5caf87b247226bcebeff9b88",
+        "needed": [
+          "libatomic.so.1",
+          "libc.so.6",
+          "ld-linux-aarch64.so.1"
+        ]
+      },
+      "libcrypto.so.1.1": {
+        "sha256": "1606d2c56dd0a52c829d8428ac4019d3085c157c5caf87b247226bcebeff9b88",
+        "needed": [
+          "libatomic.so.1",
+          "libc.so.6",
+          "ld-linux-aarch64.so.1"
+        ]
+      },
+      "libddsc.so": {
+        "sha256": "51d5c1421432108d8a4b275559c7892e822ca031d47133c2c8d31e77d251a2fb",
+        "needed": [
+          "libiceoryx_binding_c.so",
+          "libstdc++.so.6",
+          "libc.so.6",
+          "ld-linux-aarch64.so.1"
+        ]
+      },
+      "libddsc.so.0": {
+        "sha256": "51d5c1421432108d8a4b275559c7892e822ca031d47133c2c8d31e77d251a2fb",
+        "needed": [
+          "libiceoryx_binding_c.so",
+          "libstdc++.so.6",
+          "libc.so.6",
+          "ld-linux-aarch64.so.1"
+        ]
+      },
+      "libddsc.so.0.10.5": {
+        "sha256": "51d5c1421432108d8a4b275559c7892e822ca031d47133c2c8d31e77d251a2fb",
+        "needed": [
+          "libiceoryx_binding_c.so",
+          "libstdc++.so.6",
+          "libc.so.6",
+          "ld-linux-aarch64.so.1"
+        ]
+      },
+      "libddscxx.so": {
+        "sha256": "7be80024f8ab6bcfdf0e464c3b3fa329e7d728407fefbdf26da3127cebc36c29",
+        "needed": [
+          "libddsc.so.0",
+          "libiceoryx_binding_c.so",
+          "libstdc++.so.6",
+          "libm.so.6",
+          "libgcc_s.so.1",
+          "libc.so.6",
+          "ld-linux-aarch64.so.1"
+        ]
+      },
+      "libddscxx.so.0": {
+        "sha256": "7be80024f8ab6bcfdf0e464c3b3fa329e7d728407fefbdf26da3127cebc36c29",
+        "needed": [
+          "libddsc.so.0",
+          "libiceoryx_binding_c.so",
+          "libstdc++.so.6",
+          "libm.so.6",
+          "libgcc_s.so.1",
+          "libc.so.6",
+          "ld-linux-aarch64.so.1"
+        ]
+      },
+      "libddscxx.so.0.10.5": {
+        "sha256": "7be80024f8ab6bcfdf0e464c3b3fa329e7d728407fefbdf26da3127cebc36c29",
+        "needed": [
+          "libddsc.so.0",
+          "libiceoryx_binding_c.so",
+          "libstdc++.so.6",
+          "libm.so.6",
+          "libgcc_s.so.1",
+          "libc.so.6",
+          "ld-linux-aarch64.so.1"
+        ]
+      },
+      "libiceoryx_binding_c.so": {
+        "sha256": "e4f8dd5fa457b134bedf576951f4242123b4cc6493d757afd067fef81be0861f",
+        "needed": [
+          "libstdc++.so.6",
+          "libiceoryx_posh.so",
+          "libiceoryx_hoofs.so",
+          "libiceoryx_platform.so",
+          "libm.so.6",
+          "libgcc_s.so.1",
+          "libc.so.6",
+          "ld-linux-aarch64.so.1"
+        ]
+      },
+      "libiceoryx_hoofs.so": {
+        "sha256": "87153a7f19292b8561b61b5a42f0bc7b13f1e1d9a98b35bfdaf48e3d696ae881",
+        "needed": [
+          "libiceoryx_platform.so",
+          "libacl.so.1",
+          "libatomic.so.1",
+          "libstdc++.so.6",
+          "libm.so.6",
+          "libgcc_s.so.1",
+          "libc.so.6",
+          "ld-linux-aarch64.so.1"
+        ]
+      },
+      "libiceoryx_platform.so": {
+        "sha256": "a16182f92aefa3baabe3ee95411ff135d52b3c8937650f74a0f4fcec95034f34",
+        "needed": [
+          "libstdc++.so.6",
+          "libm.so.6",
+          "libgcc_s.so.1",
+          "libc.so.6"
+        ]
+      },
+      "libiceoryx_posh.so": {
+        "sha256": "b5cf7cc0e95de0e3267023a21b97234b1d247abf3358d916bf00552ec4395843",
+        "needed": [
+          "libiceoryx_hoofs.so",
+          "libiceoryx_platform.so",
+          "libstdc++.so.6",
+          "libm.so.6",
+          "libgcc_s.so.1",
+          "libc.so.6",
+          "ld-linux-aarch64.so.1"
+        ]
+      },
+      "libmediaBus.so": {
+        "sha256": "905366f2e8f335b49517f58da4f83b55e83b3416b422c09cad8a4bceff35d940",
+        "needed": [
+          "libudbus.so",
+          "libcuda.so.1",
+          "libcudart.so.12",
+          "libnvbufsurface.so.1.0.0",
+          "libnvrm_surface.so",
+          "libEGL.so.1",
+          "libnvbuf_fdmap.so.1.0.0",
+          "libGLdispatch.so.0",
+          "libnvrm_gpu.so",
+          "libnvrm_mem.so",
+          "libnvos.so",
+          "libnvsocsys.so",
+          "libnvtegrahv.so",
+          "libnvrm_sync.so",
+          "libnvsciipc.so",
+          "libnvrm_chip.so",
+          "libnvrm_host1x.so",
+          "libubase.so",
+          "libddscxx.so.0",
+          "libddsc.so.0",
+          "libiceoryx_posh.so",
+          "libiceoryx_hoofs.so",
+          "libiceoryx_binding_c.so",
+          "libiceoryx_platform.so",
+          "libacl.so.1",
+          "libattr.so.1",
+          "libstdc++.so.6",
+          "libm.so.6",
+          "libgcc_s.so.1",
+          "libc.so.6",
+          "ld-linux-aarch64.so.1"
+        ]
+      },
+      "librobotMotionSdk.so": {
+        "sha256": "e290b40b38e04eafed089a4677ff96bc018ddefb9ec2ae29fb0d4375d0b7571c",
+        "needed": [
+          "libuutils.so",
+          "libatomic.so.1",
+          "libmediaBus.so",
+          "libz.so.1",
+          "libssl.so.1.1",
+          "libcrypto.so.1.1",
+          "libudbus.so",
+          "libubase.so",
+          "libddscxx.so.0",
+          "libddsc.so.0",
+          "libiceoryx_posh.so",
+          "libiceoryx_hoofs.so",
+          "libiceoryx_binding_c.so",
+          "libiceoryx_platform.so",
+          "libacl.so.1",
+          "libattr.so.1",
+          "libcuda.so.1",
+          "libcudart.so.12",
+          "libnvbufsurface.so.1.0.0",
+          "libnvrm_surface.so",
+          "libEGL.so.1",
+          "libnvbuf_fdmap.so.1.0.0",
+          "libGLdispatch.so.0",
+          "libnvrm_gpu.so",
+          "libnvrm_mem.so",
+          "libnvos.so",
+          "libnvsocsys.so",
+          "libnvtegrahv.so",
+          "libnvrm_sync.so",
+          "libnvsciipc.so",
+          "libnvrm_chip.so",
+          "libnvrm_host1x.so",
+          "libstdc++.so.6",
+          "libm.so.6",
+          "libgcc_s.so.1",
+          "libc.so.6",
+          "ld-linux-aarch64.so.1"
+        ]
+      },
+      "libssl.so": {
+        "sha256": "87bf9f4028f6c2497c28efc2e3c514b1ef4b4f539da039c3cd9b643378bad78a",
+        "needed": [
+          "libcrypto.so.1.1",
+          "libatomic.so.1",
+          "libc.so.6",
+          "ld-linux-aarch64.so.1"
+        ]
+      },
+      "libssl.so.1.1": {
+        "sha256": "87bf9f4028f6c2497c28efc2e3c514b1ef4b4f539da039c3cd9b643378bad78a",
+        "needed": [
+          "libcrypto.so.1.1",
+          "libatomic.so.1",
+          "libc.so.6",
+          "ld-linux-aarch64.so.1"
+        ]
+      },
+      "libubase.so": {
+        "sha256": "8ac28167daff9eb7501404f0798529f5eb9bcefeb5e0bc671f9148becae6c18f",
+        "needed": [
+          "libstdc++.so.6",
+          "libm.so.6",
+          "libgcc_s.so.1",
+          "libc.so.6",
+          "ld-linux-aarch64.so.1"
+        ]
+      },
+      "libudbus.so": {
+        "sha256": "5ea4233b39a5b84391f767352f58f14013cf9b64e18046fad48266f2c6a74881",
+        "needed": [
+          "libubase.so",
+          "libddscxx.so.0",
+          "libddsc.so.0",
+          "libiceoryx_posh.so",
+          "libiceoryx_hoofs.so",
+          "libiceoryx_binding_c.so",
+          "libiceoryx_platform.so",
+          "libacl.so.1",
+          "libattr.so.1",
+          "libstdc++.so.6",
+          "libm.so.6",
+          "libgcc_s.so.1",
+          "libc.so.6",
+          "ld-linux-aarch64.so.1"
+        ]
+      },
+      "libuutils.so": {
+        "sha256": "df5129b6378a054c19d4b2011bd96651be5656fde8110daf83ad60af3b9d4b76",
+        "needed": [
+          "libz.so.1",
+          "libssl.so.1.1",
+          "libcrypto.so.1.1",
+          "libstdc++.so.6",
+          "libm.so.6",
+          "libgcc_s.so.1",
+          "libc.so.6",
+          "ld-linux-aarch64.so.1"
+        ]
+      },
+      "libz.so": {
+        "sha256": "d7dd92d0d15592ad92d61696b6ad79e4669ae2bc7c34c5601078bb9ebcc1826d",
+        "needed": [
+          "libc.so.6",
+          "ld-linux-aarch64.so.1"
+        ]
+      },
+      "libz.so.1": {
+        "sha256": "d7dd92d0d15592ad92d61696b6ad79e4669ae2bc7c34c5601078bb9ebcc1826d",
+        "needed": [
+          "libc.so.6",
+          "ld-linux-aarch64.so.1"
+        ]
+      },
+      "libz.so.1.2.11": {
+        "sha256": "d7dd92d0d15592ad92d61696b6ad79e4669ae2bc7c34c5601078bb9ebcc1826d",
+        "needed": [
+          "libc.so.6",
+          "ld-linux-aarch64.so.1"
+        ]
+      }
+    },
+    "i386": {
+      "libacl.so": {
+        "sha256": "3b45d56a0fc7a7b1197cb13614181e331d5c1ef77d8841dc3e704d9b6ab1c229",
+        "needed": [
+          "libc.so.6"
+        ]
+      },
+      "libacl.so.1": {
+        "sha256": "3b45d56a0fc7a7b1197cb13614181e331d5c1ef77d8841dc3e704d9b6ab1c229",
+        "needed": [
+          "libc.so.6"
+        ]
+      },
+      "libacl.so.1.1.2302": {
+        "sha256": "3b45d56a0fc7a7b1197cb13614181e331d5c1ef77d8841dc3e704d9b6ab1c229",
+        "needed": [
+          "libc.so.6"
+        ]
+      },
+      "libattr.so": {
+        "sha256": "60b60b31403c3451057594a46294189b147ad05369bfee7b49ca880a16e1b923",
+        "needed": [
+          "libc.so.6"
+        ]
+      },
+      "libattr.so.1": {
+        "sha256": "60b60b31403c3451057594a46294189b147ad05369bfee7b49ca880a16e1b923",
+        "needed": [
+          "libc.so.6"
+        ]
+      },
+      "libattr.so.1.1.2502": {
+        "sha256": "60b60b31403c3451057594a46294189b147ad05369bfee7b49ca880a16e1b923",
+        "needed": [
+          "libc.so.6"
+        ]
+      },
+      "libcrypto.so": {
+        "sha256": "0ecf5372dc42f4b5c608972e260669844d3e3d54da91f924cc0691f6b13da537",
+        "needed": [
+          "libc.so.6"
+        ]
+      },
+      "libcrypto.so.1.1": {
+        "sha256": "0ecf5372dc42f4b5c608972e260669844d3e3d54da91f924cc0691f6b13da537",
+        "needed": [
+          "libc.so.6"
+        ]
+      },
+      "libddsc.so": {
+        "sha256": "64c68168a5b38653fcae2be695d98e432df6e320921479b70d598ca29ca5e366",
+        "needed": [
+          "libiceoryx_binding_c.so",
+          "libc.so.6",
+          "ld-linux.so.2"
+        ]
+      },
+      "libddsc.so.0": {
+        "sha256": "64c68168a5b38653fcae2be695d98e432df6e320921479b70d598ca29ca5e366",
+        "needed": [
+          "libiceoryx_binding_c.so",
+          "libc.so.6",
+          "ld-linux.so.2"
+        ]
+      },
+      "libddsc.so.0.10.5": {
+        "sha256": "64c68168a5b38653fcae2be695d98e432df6e320921479b70d598ca29ca5e366",
+        "needed": [
+          "libiceoryx_binding_c.so",
+          "libc.so.6",
+          "ld-linux.so.2"
+        ]
+      },
+      "libddscxx.so": {
+        "sha256": "bd854fc01963df98fa98a176991c424d5be8ec2c02ee7ed1a0b813d1fc0ec132",
+        "needed": [
+          "libddsc.so.0",
+          "libstdc++.so.6",
+          "libgcc_s.so.1",
+          "libc.so.6"
+        ]
+      },
+      "libddscxx.so.0": {
+        "sha256": "bd854fc01963df98fa98a176991c424d5be8ec2c02ee7ed1a0b813d1fc0ec132",
+        "needed": [
+          "libddsc.so.0",
+          "libstdc++.so.6",
+          "libgcc_s.so.1",
+          "libc.so.6"
+        ]
+      },
+      "libddscxx.so.0.10.5": {
+        "sha256": "bd854fc01963df98fa98a176991c424d5be8ec2c02ee7ed1a0b813d1fc0ec132",
+        "needed": [
+          "libddsc.so.0",
+          "libstdc++.so.6",
+          "libgcc_s.so.1",
+          "libc.so.6"
+        ]
+      },
+      "libiceoryx_binding_c.so": {
+        "sha256": "bd2d8018545a330d426c70ca33812194e0639cca5140f7ebddb7a9f797431b8b",
+        "needed": [
+          "libstdc++.so.6",
+          "libiceoryx_posh.so",
+          "libiceoryx_hoofs.so",
+          "libc.so.6"
+        ]
+      },
+      "libiceoryx_hoofs.so": {
+        "sha256": "c2489e92534a5a41426710ae43b18d2494a1d54d4e0a066d58865f42507a538c",
+        "needed": [
+          "libiceoryx_platform.so",
+          "libacl.so.1",
+          "libstdc++.so.6",
+          "libgcc_s.so.1",
+          "libc.so.6"
+        ]
+      },
+      "libiceoryx_platform.so": {
+        "sha256": "592f213d6e5cc886d74859d8cdbe40c7fba813501e4a31ea9569fec6f4132629",
+        "needed": [
+          "libc.so.6"
+        ]
+      },
+      "libiceoryx_posh.so": {
+        "sha256": "ce26c98ecc2bf44d1f1e0b49e46c48df1f91af629751b712ecf933cec4b05f20",
+        "needed": [
+          "libiceoryx_hoofs.so",
+          "libstdc++.so.6",
+          "libgcc_s.so.1",
+          "libc.so.6"
+        ]
+      },
+      "libmediaBus.so": {
+        "sha256": "22ed45414a6f1005c041fdbb8c5563a848dd570b912f403dcd8f7af8dd37b222",
+        "needed": [
+          "libudbus.so",
+          "libubase.so",
+          "libstdc++.so.6",
+          "libgcc_s.so.1",
+          "libc.so.6"
+        ]
+      },
+      "librobotMotionSdk.so": {
+        "sha256": "25b29fed4a20bd2d1b4e56ef219d4e3a200675beeec044c100afa74dba8395a2",
+        "needed": [
+          "libudbus.so",
+          "libubase.so",
+          "libddscxx.so.0",
+          "libddsc.so.0",
+          "libstdc++.so.6",
+          "libgcc_s.so.1",
+          "libc.so.6",
+          "ld-linux.so.2"
+        ]
+      },
+      "libubase.so": {
+        "sha256": "0285f72fcfaf258c15fa926d910325709f2b8cc6f226c47d86748c82b52e499c",
+        "needed": [
+          "libstdc++.so.6",
+          "libm.so.6",
+          "libgcc_s.so.1",
+          "libc.so.6",
+          "ld-linux.so.2"
+        ]
+      },
+      "libudbus.so": {
+        "sha256": "07a88e77058a2f2869a3ab599f102e16d372147b827bdca7f20afbe7ae766578",
+        "needed": [
+          "libubase.so",
+          "libddscxx.so.0",
+          "libddsc.so.0",
+          "libstdc++.so.6",
+          "libgcc_s.so.1",
+          "libc.so.6",
+          "ld-linux.so.2"
+        ]
+      },
+      "libuutils.so": {
+        "sha256": "89e3482af5e4115063cd48f42d55e561bfdd29685f626c49cca3b9aa42957bdc",
+        "needed": [
+          "libz.so.1",
+          "libcrypto.so.1.1",
+          "libstdc++.so.6",
+          "libgcc_s.so.1",
+          "libc.so.6"
+        ]
+      },
+      "libz.so": {
+        "sha256": "e4375f47e0d0010ee58d1ab21f24bdb961efff1e27f9d699c0c531d3862e5b4a",
+        "needed": [
+          "libc.so.6"
+        ]
+      },
+      "libz.so.1": {
+        "sha256": "e4375f47e0d0010ee58d1ab21f24bdb961efff1e27f9d699c0c531d3862e5b4a",
+        "needed": [
+          "libc.so.6"
+        ]
+      },
+      "libz.so.1.2.11": {
+        "sha256": "e4375f47e0d0010ee58d1ab21f24bdb961efff1e27f9d699c0c531d3862e5b4a",
+        "needed": [
+          "libc.so.6"
+        ]
+      }
+    }
+  },
+  "validation": {
+    "cpp_examples": [
+      "x86_64",
+      "aarch64",
+      "i386"
+    ],
+    "python_native": "x86_64 CPython 3.10: import, TRC round-trip, wrapper forwarding",
+    "hardware": "not run",
+    "python_wheel": "CPython 3.10 x86_64 wheel built and installed in isolated target; TRC binding tests passed",
+    "documentation_cpp_snippet": "syntax check passed",
+    "aarch64_runtime": "cross-linked; execution on Jetson not tested; requires Jetson system CUDA/NVIDIA libraries"
+  },
+  "build_configuration": {
+    "DEBUG": "no",
+    "ENABLE_MOCK_MODE": "ON (no conditional use in MotionCtrlSdk/UBase/UDBus/UUtils/MediaBus sources)",
+    "target": "robotMotionSdk",
+    "platforms": {
+      "x86_64": "GCC 12",
+      "aarch64": "nvidia_arm toolchain",
+      "i386": "GCC 11 -m32"
+    }
+  }
+}
