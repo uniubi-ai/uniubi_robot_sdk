@@ -6,6 +6,42 @@ UWB observations expose the currently paired beacon ID as `uwb.beaconId` in IDL/
 
 The public development repository for the Uniubi Robot C++ motion-control SDK. It provides public headers, C++ examples, build entry points, and prebuilt runtime libraries for each supported architecture. The complete development workflow and API documentation are maintained in [`uniubi-docs`](https://github.com/uniubi-ai/uniubi-docs).
 
+## Generic ARM64 external hosts (`aarch64_host`)
+
+Use `aarch64_host` for a Linux ARM64 computer outside the robot brain board. It supports remote High-level control and remote PCM capture/RawBack playback, using the same generic media backend as x86. Low-level SHM control and local video/layout access require the robot brain board.
+
+Both platforms have an ARM64 CPU: `CMAKE_SYSTEM_PROCESSOR=aarch64` alone selects the Orin runtime `lib/aarch64/`. Explicitly pass `-DPLATFORM=aarch64_host` to select `lib/aarch64_host/`, including when building against an installed SDK with `find_package(UniubiRobotSdk)`. Use a new build directory when switching platforms.
+
+The delivered host libraries do not depend on NVIDIA media libraries. The target needs glibc >= 2.34, libstdc++ exporting `GLIBCXX_3.4.30` (GCC 12 runtime or later), and `libatomic.so.1`. Copy the complete matching `lib/aarch64_host/` directory, including DDS and other companion libraries.
+
+From the C++ SDK repository, build natively on the ARM64 host:
+
+```bash
+cmake -S . -B build-aarch64-host -DPLATFORM=aarch64_host
+cmake --build build-aarch64-host -j
+cmake --install build-aarch64-host --prefix "$HOME/.local/uniubi-aarch64-host"
+export SDK_ARCH=aarch64_host
+export LD_LIBRARY_PATH="$PWD/lib/$SDK_ARCH:${LD_LIBRARY_PATH:-}"
+```
+
+For an x86-to-ARM64 cross-build, add `-DCMAKE_TOOLCHAIN_FILE=cmake/toolchain-aarch64-linux-gnu.cmake` to the configure command and install the GNU `gcc-aarch64-linux-gnu` / `g++-aarch64-linux-gnu` toolchain. Deploy the result to the ARM64 host. The Orin TensorRT example is not enabled by default for this platform.
+
+From the Python SDK repository, build on the target ARM64 host with its Python interpreter:
+
+```bash
+export UNIUBI_SDK_ROOT=/path/to/uniubi_robot_sdk
+python3 -m pip install . -Ccmake.define.PLATFORM=aarch64_host -Cbuild-dir=build/aarch64_host
+export SDK_ARCH=aarch64_host
+export LD_LIBRARY_PATH="$UNIUBI_SDK_ROOT/lib/$SDK_ARCH:${LD_LIBRARY_PATH:-}"
+# Alternatively, create a wheel for this host platform:
+python3 -m pip wheel . --no-deps -w dist/aarch64_host -Ccmake.define.PLATFORM=aarch64_host -Cbuild-dir=build/aarch64_host
+```
+
+Python wheels do not bundle SDK runtime libraries. Orin and external-host wheels can have the same `linux_aarch64` tag: retain the platform-specific output directory and use matching runtime libraries; the wheel tag does not distinguish the deployment platform. SDK headers, libraries, extensions, and device software must match.
+
+For remote media, connect the High-level client using the robot device ID, then call `media.setup(robot_ip)`. Use the C++ `example_audio_rawback` or Python `example_audio_rawback.py --host ROBOT_IP --device-id DEVICE_ID` with a PCM input file. Remote video subscriptions and layout queries return `kNotSupported`.
+
+
 ## Robot Version Requirement
 
 The robot version must be **1.01.005 or later** to use this SDK. Upgrade robots running an earlier version before use.
@@ -21,6 +57,7 @@ The SDK architecture is determined by the **machine on which the program will ru
 | Final runtime location | Target architecture | Typical use | Available build methods |
 |---|---|---|---|
 | Uniubi-provided Orin development board | `aarch64` | Low-level, MediaBus, and on-board High-level | Build natively on Orin, or cross-compile on an x86_64 Linux host |
+| Generic ARM64 Linux external host | `aarch64_host` | Remote High-level, audio capture and playback | Native or GNU ARM64 cross-build with `-DPLATFORM=aarch64_host` |
 | x86_64 Linux host | `x86_64` | Remote High-level, Mock, and integration tools | Build directly on that x86_64 host |
 | 32-bit x86 Linux device | `i386` | Specific legacy systems | Build on the target device or use a matching cross toolchain |
 
@@ -29,7 +66,7 @@ If the program will run on Orin, the target architecture is always `aarch64`. Yo
 1. log in to the Uniubi-provided Orin board and build natively; or
 2. cross-compile on an x86_64 Linux host and deploy the `aarch64` artifacts to Orin.
 
-Low-level and MediaBus are on-board capabilities, but they do not require one particular build method.
+Low-level and local video/layout access require the brain board; remote High-level and audio are also available on external hosts.
 
 ### 2. Prepare the build environment
 
@@ -124,7 +161,7 @@ export UNIUBI_SDK_PREFIX="$HOME/.local/uniubi"
 
 case "$(uname -m)" in
   x86_64|amd64) SDK_ARCH=x86_64 ;;
-  aarch64|arm64) SDK_ARCH=aarch64 ;;
+  aarch64|arm64) SDK_ARCH=${SDK_ARCH:-aarch64} ;;
   i386|i486|i586|i686) SDK_ARCH=i386 ;;
   *) echo "Unsupported architecture: $(uname -m)"; exit 1 ;;
 esac
@@ -139,7 +176,7 @@ To run directly from the source tree, execute in the SDK repository root:
 ```bash
 case "$(uname -m)" in
   x86_64|amd64) SDK_ARCH=x86_64 ;;
-  aarch64|arm64) SDK_ARCH=aarch64 ;;
+  aarch64|arm64) SDK_ARCH=${SDK_ARCH:-aarch64} ;;
   i386|i486|i586|i686) SDK_ARCH=i386 ;;
   *) echo "Unsupported architecture: $(uname -m)"; exit 1 ;;
 esac
@@ -160,7 +197,11 @@ set(UNIUBI_SDK_ROOT "$ENV{UNIUBI_SDK_ROOT}" CACHE PATH "Uniubi SDK root")
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64|AMD64)$")
   set(ARCH_DIR x86_64)
 elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64|ARM64)$")
-  set(ARCH_DIR aarch64)
+  if(PLATFORM STREQUAL "aarch64_host")
+    set(ARCH_DIR aarch64_host)
+  else()
+    set(ARCH_DIR aarch64)
+  endif()
 elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^(i.86|x86)$")
   set(ARCH_DIR i386)
 else()
@@ -429,7 +470,7 @@ Original UniUbi code, headers, examples, and documentation in this repository ar
 
 ## PCM audio capture and playback
 
-MediaBus is enabled by default on x86_64, i386, and aarch64. Local Orin deployment supports video, audio, and layout queries; remote deployment supports PCM capture and RawBack playback via `media.setup(host)`. Remote video subscriptions and layout queries return `kNotSupported`. SDK headers, runtime libraries, Python extensions, and device software must use matching versions.
+MediaBus is enabled by default on x86_64, i386, aarch64, and aarch64_host. Local Orin deployment supports video, audio, and layout queries; remote deployment supports PCM capture and RawBack playback via `media.setup(host)`. Remote video subscriptions and layout queries return `kNotSupported`. SDK headers, runtime libraries, Python extensions, and device software must use matching versions.
 
 [example_audio.cpp](examples/example_audio.cpp) · [example_audio_rawback.cpp](examples/example_audio_rawback.cpp) · [Audio guide](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/how-to/stream-pcm-audio.md)
 

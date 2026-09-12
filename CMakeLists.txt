@@ -57,10 +57,15 @@ endif()
 
 # 按目标架构 (CMAKE_SYSTEM_PROCESSOR) 选择 Lib 子目录
 # 支持：x86_64 / aarch64 / i386；交叉编译时由工具链文件设置 CMAKE_SYSTEM_PROCESSOR
+# ARM64 external hosts require -DPLATFORM=aarch64_host; default ARM64 is Orin.
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64|AMD64)$")
     set(UNIUBI_SDK_ARCH_DIR "x86_64")
 elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64|ARM64)$")
-    set(UNIUBI_SDK_ARCH_DIR "aarch64")
+    if(PLATFORM STREQUAL "aarch64_host")
+        set(UNIUBI_SDK_ARCH_DIR "aarch64_host")
+    else()
+        set(UNIUBI_SDK_ARCH_DIR "aarch64")
+    endif()
 elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^(i.86|x86)$")
     set(UNIUBI_SDK_ARCH_DIR "i386")
 else()

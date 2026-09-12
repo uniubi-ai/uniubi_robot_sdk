@@ -17,7 +17,7 @@ endif()
 # TensorRT Low-level 示例默认只在 Orin 原生构建时启用。交叉编译需要目标
 # aarch64 的 TensorRT/CUDA 开发文件，因此必须显式打开并提供对应路径。
 set(_UNIUBI_TENSORRT_EXAMPLE_DEFAULT OFF)
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64|ARM64)$" AND
+if(UNIUBI_SDK_ARCH_DIR STREQUAL "aarch64" AND
    NOT CMAKE_CROSSCOMPILING AND
    (EXISTS "/usr/include/aarch64-linux-gnu/NvInfer.h" OR
     EXISTS "/usr/include/NvInfer.h") AND

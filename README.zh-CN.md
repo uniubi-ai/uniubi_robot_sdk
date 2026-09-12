@@ -6,6 +6,42 @@ UWB 观测新增当前配对信标编号：IDL / C++ 为 `uwb.beaconId`，ROS 2 
 
 Uniubi 机器人 C++ 运动控制 SDK 的公开开发仓库，提供公开头文件、C++ 示例、构建入口和按架构交付的预编译运行库。完整开发路径与 API 说明统一维护在 [`uniubi-docs`](https://github.com/uniubi-ai/uniubi-docs)。
 
+## 普通 ARM64 外部主机（`aarch64_host`）
+
+机器人非大脑板的 ARM64 Linux 主机使用 `aarch64_host`，支持远端 High-level 控制、PCM 采集和 RawBack 播放，媒体后端与 x86 相同。Low-level 共享内存控制、本地视频和布局访问要求在机器人大脑板运行。
+
+两个平台都是 ARM64 CPU：仅设置 `CMAKE_SYSTEM_PROCESSOR=aarch64` 仍选择 Orin 的 `lib/aarch64/`。必须显式传入 `-DPLATFORM=aarch64_host` 才会选择 `lib/aarch64_host/`，通过 `find_package(UniubiRobotSdk)` 使用已安装 SDK 时也需要传入。切换平台请使用新的构建目录。
+
+交付的 host 库不依赖 NVIDIA 媒体库。目标系统需要 glibc ≥ 2.34、提供 `GLIBCXX_3.4.30` 的 libstdc++（GCC 12 或更新的运行库）及 `libatomic.so.1`。请完整携带同版本 `lib/aarch64_host/`，包括 DDS 等配套依赖。
+
+在普通 ARM64 主机的 C++ SDK 仓库中原生构建：
+
+```bash
+cmake -S . -B build-aarch64-host -DPLATFORM=aarch64_host
+cmake --build build-aarch64-host -j
+cmake --install build-aarch64-host --prefix "$HOME/.local/uniubi-aarch64-host"
+export SDK_ARCH=aarch64_host
+export LD_LIBRARY_PATH="$PWD/lib/$SDK_ARCH:${LD_LIBRARY_PATH:-}"
+```
+
+从 x86 交叉编译时，在配置命令中增加 `-DCMAKE_TOOLCHAIN_FILE=cmake/toolchain-aarch64-linux-gnu.cmake`，并安装通用 GNU `gcc-aarch64-linux-gnu` / `g++-aarch64-linux-gnu` 工具链。将产物部署到 ARM64 主机运行。该平台默认不开启 Orin TensorRT 示例。
+
+在目标 ARM64 主机的 Python SDK 仓库中，使用目标 Python 构建：
+
+```bash
+export UNIUBI_SDK_ROOT=/path/to/uniubi_robot_sdk
+python3 -m pip install . -Ccmake.define.PLATFORM=aarch64_host -Cbuild-dir=build/aarch64_host
+export SDK_ARCH=aarch64_host
+export LD_LIBRARY_PATH="$UNIUBI_SDK_ROOT/lib/$SDK_ARCH:${LD_LIBRARY_PATH:-}"
+# 或生成该 host 平台的 wheel：
+python3 -m pip wheel . --no-deps -w dist/aarch64_host -Ccmake.define.PLATFORM=aarch64_host -Cbuild-dir=build/aarch64_host
+```
+
+Python wheel 不内置 SDK 运行库。Orin 和外部主机 wheel 可能具有相同的 `linux_aarch64` 标签，请保留按平台区分的产物目录并配套使用运行库；wheel 标签无法区分部署平台。SDK 头文件、运行库、扩展与设备软件必须版本匹配。
+
+远程媒体需先通过设备 ID 连接 High-level 客户端，再调用 `media.setup(robot_ip)`。使用 C++ `example_audio_rawback` 或 Python `example_audio_rawback.py --host ROBOT_IP --device-id DEVICE_ID` 并提供 PCM 文件。远端视频订阅和布局查询返回 `kNotSupported`。
+
+
 ## 机器人版本要求
 
 使用本 SDK 时，机器人版本必须 **大于等于 1.01.005**。低于该版本的机器人请先升级后再使用。
@@ -21,6 +57,7 @@ SDK 架构由**程序最终运行的机器**决定：
 | 程序最终运行位置 | 目标架构 | 典型用途 | 可选构建方式 |
 |---|---|---|---|
 | Uniubi 提供的 Orin 开发板 | `aarch64` | Low-level、MediaBus、板内 High-level | 登录 Orin 直接构建，或在 x86_64 Linux 主机交叉编译 |
+| 普通 ARM64 Linux 外部主机 | `aarch64_host` | 远端 High-level、音频采集和播放 | 原生构建或 GNU ARM64 交叉编译，指定 `-DPLATFORM=aarch64_host` |
 | x86_64 Linux 主机 | `x86_64` | 远端 High-level、Mock / 联调工具 | 在该 x86_64 主机上直接构建 |
 | 32 位 x86 Linux 设备 | `i386` | 特定存量系统 | 在目标设备构建，或使用对应交叉工具链 |
 
@@ -29,7 +66,7 @@ SDK 架构由**程序最终运行的机器**决定：
 1. 登录 Uniubi 提供的 Orin 开发板，在 Orin 上原生构建；
 2. 在 x86_64 Linux 主机上交叉编译，再将 `aarch64` 产物部署到 Orin。
 
-Low-level 和 MediaBus 是板内能力，但不限制采用原生构建还是交叉编译。
+Low-level 和本地视频/布局访问要求在大脑板运行；外部主机也支持远端 High-level 和音频。
 
 ### 2. 准备编译环境
 
@@ -126,7 +163,7 @@ export UNIUBI_SDK_PREFIX="$HOME/.local/uniubi"
 
 case "$(uname -m)" in
   x86_64|amd64) SDK_ARCH=x86_64 ;;
-  aarch64|arm64) SDK_ARCH=aarch64 ;;
+  aarch64|arm64) SDK_ARCH=${SDK_ARCH:-aarch64} ;;
   i386|i486|i586|i686) SDK_ARCH=i386 ;;
   *) echo "Unsupported architecture: $(uname -m)"; exit 1 ;;
 esac
@@ -141,7 +178,7 @@ sudo env LD_LIBRARY_PATH="$LD_LIBRARY_PATH" \
 ```bash
 case "$(uname -m)" in
   x86_64|amd64) SDK_ARCH=x86_64 ;;
-  aarch64|arm64) SDK_ARCH=aarch64 ;;
+  aarch64|arm64) SDK_ARCH=${SDK_ARCH:-aarch64} ;;
   i386|i486|i586|i686) SDK_ARCH=i386 ;;
   *) echo "Unsupported architecture: $(uname -m)"; exit 1 ;;
 esac
@@ -162,7 +199,11 @@ set(UNIUBI_SDK_ROOT "$ENV{UNIUBI_SDK_ROOT}" CACHE PATH "Uniubi SDK root")
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64|AMD64)$")
   set(ARCH_DIR x86_64)
 elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64|ARM64)$")
-  set(ARCH_DIR aarch64)
+  if(PLATFORM STREQUAL "aarch64_host")
+    set(ARCH_DIR aarch64_host)
+  else()
+    set(ARCH_DIR aarch64)
+  endif()
 elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^(i.86|x86)$")
   set(ARCH_DIR i386)
 else()
@@ -433,7 +474,7 @@ DDS / ROS 2 协议直连属于 Advanced 集成路径，不是普通 C++ SDK 开�
 
 ## PCM 音频采集与播放
 
-x86_64、i386、aarch64 默认开启 MediaBus。Orin 本机模式支持视频、音频和布局查询；远端模式通过 `media.setup(host)` 支持 PCM 采集和 RawBack 播放。远端视频订阅和布局查询返回 `kNotSupported`。SDK 头文件、运行库、Python 扩展与设备软件必须版本匹配。
+x86_64、i386、aarch64、aarch64_host 默认开启 MediaBus。Orin 本机模式支持视频、音频和布局查询；远端模式通过 `media.setup(host)` 支持 PCM 采集和 RawBack 播放。远端视频订阅和布局查询返回 `kNotSupported`。SDK 头文件、运行库、Python 扩展与设备软件必须版本匹配。
 
 [example_audio.cpp](examples/example_audio.cpp) · [example_audio_rawback.cpp](examples/example_audio_rawback.cpp) · [音频使用指南](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/how-to/stream-pcm-audio.zh-CN.md)
 
