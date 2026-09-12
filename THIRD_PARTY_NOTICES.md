@@ -7,7 +7,14 @@ components.
 ## Precompiled Library Families
 
 The repository includes precompiled Linux shared libraries under `lib/aarch64/`,
-`lib/i386/`, and `lib/x86_64/`. Symlinks may point to the versioned library files.
+`lib/aarch64_host/`, `lib/i386/`, and `lib/x86_64/`. Symlinks may point to the versioned library files.
+
+The ARM64 external-host dependency binaries were synchronized from internal Build
+commit `da59f36bfa834755386d2e405a634c728e6bee48`, using its independent
+`3thparty/{cycdds,openssl,zlib}/Lib/aarch64_host/` directories. The five UniUbi
+libraries were rebuilt against those dependencies from main commit `094c7993`.
+This records delivery provenance; the component source/license verification items
+below remain unchanged.
 
 ## OpenSSL
 

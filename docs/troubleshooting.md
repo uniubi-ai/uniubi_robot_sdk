@@ -53,7 +53,7 @@ A `true` return only means that the configuration frame was submitted to shared 
 
 ## Local MediaBus Configuration
 
-`IMediaBusClient` provides local, on-board media-frame subscription on `aarch64`. Remote or multi-device SDK mode does not provide MediaBus frame subscription. On `x86_64` / `i386`, do not call media-client interfaces such as `createMediaBusClient()`, `setup()`, or `start*Frame()`.
+MediaBus is enabled by default on x86_64, i386, aarch64, and aarch64_host. Local Orin deployment supports video, audio, and layout queries; remote deployment supports PCM capture and RawBack playback via `media.setup(host)`. Remote video subscriptions and layout queries return `kNotSupported`. SDK headers, runtime libraries, Python extensions, and device software must use matching versions.
 
 For on-board deployment, `LocalMediaBusClient` always reads `/etc/robot/sdk_config.json`, which must contain a top-level `streamDefine` object. `setup()` fails when the file is missing or malformed:
 

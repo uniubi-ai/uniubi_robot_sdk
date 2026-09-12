@@ -122,7 +122,7 @@ typedef enum {
     motorOverVoltage     = 6,       ///< 过压
     motorPGAbnormality   = 0x3B,    ///< PG 异常
     motorHWUndervoltage  = 0x3C,    ///< 硬件欠压
-    motorCommError      = 0x3F,    ///< 通信错误
+    motorCommError       = 0x3F,    ///< 通信错误
     motorControlOffline  = 1 << 6,  ///< 控制板离线
     controlMotorNotEnable,          ///< 未使能
     motorControlNotReady,           ///< 控制未就绪
@@ -191,8 +191,9 @@ struct UWBRawObserved {
     uint16_t        pitch = 0;              /**< 俯仰角 单位 deg,[0, 360)，用于将空间距离投影到水平距离*/
     uint16_t        azimuth = 0;            /**< 方位角 单位 deg,[0, 360) 正前方 0 度、逆时针递增*/
     uint32_t        distance = 0;           /**< 距离 单位 cm*/
+    uint32_t        beaconId = 0;           /**< 当前配对信标ID*/
 };
-static_assert(sizeof(UWBRawObserved) == 12, "UWBRawObserved size invalid");
+static_assert(sizeof(UWBRawObserved) == 16, "UWBRawObserved size invalid");
 
 struct MotorHeader {
     uint16_t       limbNo;
@@ -267,6 +268,7 @@ struct MotionOdometry {
     float                  yawSpeed = 0.0f;     /**< 偏航角速度,rad/s */
     uint32_t               epoch = 0;           /**< 原点代次 */
 };
+
 static_assert(sizeof(MotionOdometry) == 40, "MotionOdometry size invalid");
 
 struct SensorObserved {
@@ -275,7 +277,7 @@ struct SensorObserved {
     MotionOdometry   odom;                      /**里程计*/
 };
 
-static_assert(sizeof(SensorObserved) == 76, "SensorObserved size invalid");
+static_assert(sizeof(SensorObserved) == 80, "SensorObserved size invalid");
 
 /**
  * @brief 低级运控操作指令
@@ -305,7 +307,7 @@ struct MotorCtrlAction {
 static_assert(sizeof(MotorCtrlAction) == 388, "MotorCtrlAction size invalid");
 
 struct LowLevelMotionObserved {
-    uint8_t                systemSta;                       /// 系统状态
+    uint8_t                systemSta = 0;                   /// 系统状态
     uint8_t                standby = true;                  /// 是否运控已经待机
     uint8_t                setupReady = false;              /// 运控是否准备完成
     uint32_t               motorNum;                        /// 电机数据

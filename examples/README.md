@@ -69,7 +69,7 @@ Before running, make the SDK runtime libraries visible to the dynamic linker:
 ```bash
 case "$(uname -m)" in
   x86_64|amd64) SDK_ARCH=x86_64 ;;
-  aarch64|arm64) SDK_ARCH=aarch64 ;;
+  aarch64|arm64) SDK_ARCH=${SDK_ARCH:-aarch64} ;;
   i386|i486|i586|i686) SDK_ARCH=i386 ;;
   *) echo "unsupported architecture"; exit 1 ;;
 esac
@@ -86,7 +86,7 @@ On-board High-level, Low-level, and MediaBus examples require root privileges on
 | `example_media_frames` | Subscribes to and saves on-board media frames | `aarch64` only; media service and SHM ready |
 
 High-level can run either on the robot as an `aarch64` program or on an
-external Linux x86_64 host. On-board single-device mode does not require an SN;
+external Linux x86_64 or ARM64 (`aarch64_host`) host. On-board single-device mode does not require an SN;
 use the board High-level interface `eth0.100` for the first read-only run:
 
 ```bash
@@ -219,6 +219,8 @@ Do not execute `walk` with all four feet suspended. During both stages, keep the
 On exit, this policy example calls `setMotionEnable(false)` only if it is already in the prepared state, then disconnects and shuts down the SDK. It does not call `emergencyStop()` or `restoreMotionControlMode()`. This exit behavior differs from the generic `example_lowlevel` above and must not be conflated with it.
 
 The example is disabled by default for cross-compilation. When `-DBUILD_SDK_TENSORRT_EXAMPLE=ON` is set explicitly, `UNIUBI_TENSORRT_ROOT` and `UNIUBI_CUDA_ROOT` must provide aarch64 headers and link libraries that match the target JetPack. Both the NVIDIA APT cross-package path above and native Orin build path have been validated. The SDK repository does not redistribute NVIDIA binary libraries.
+
+Audio examples: [example_audio.cpp](example_audio.cpp) (local capture) · [example_audio_rawback.cpp](example_audio_rawback.cpp) (local or remote playback, with optional capture). For remote arguments and setup, see [PCM guide](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/how-to/stream-pcm-audio.md).
 
 ### NV21 and four-channel PCM capture
 

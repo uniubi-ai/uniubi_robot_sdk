@@ -178,6 +178,7 @@ typedef enum {
     mediaBufferMetaUnknown = 0,
     mediaBufferMetaTLV     = ('T' << 16) | ('L' << 8) | 'V',
     mediaBufferMetaIMU     = ('I' << 16) | ('M' << 8) | 'U',
+    mediaBufferMetaAudioRef = ('A' << 16) | ('R' << 8) | 'F',
 } MediaBufferMetaType;
 
 /**
