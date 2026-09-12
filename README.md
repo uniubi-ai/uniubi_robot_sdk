@@ -44,7 +44,7 @@ For remote media, connect the High-level client using the robot device ID, then 
 
 ## Robot Version Requirement
 
-The robot version must be **1.01.005 or later** to use this SDK. Upgrade robots running an earlier version before use.
+The robot version must be **1.00.000 or later** to use this SDK. Upgrade robots running an earlier version before use.
 
 ## Build and Install
 
