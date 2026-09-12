@@ -6,7 +6,7 @@ The public development repository for the Uniubi Robot C++ motion-control SDK. I
 
 ## Robot Version Requirement
 
-The robot version must be **1.00.000 or later** to use this SDK. Upgrade robots running an earlier version before use.
+Required robot software version: [Cyvet-V1.00.000](http://192.168.1.8/RobotRelease/System/littleDog/Release/dv500/Cyvet-V1.00.000).
 
 ## Build and Install
 
