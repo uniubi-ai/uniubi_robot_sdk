@@ -89,7 +89,7 @@ export LD_LIBRARY_PATH="/path/to/uniubi-sdk/lib/$SDK_ARCH${LD_LIBRARY_PATH:+:$LD
 | `example_lowlevel_tensorrt` | 输入 ONNX，每次启动现场构建 FP32 TensorRT engine，并以 50 Hz 运行 Low-level 策略 | 仅 Jetson Orin；启动只连接；吊架上先验证 `stand` / `lay`，空旷平整地面再验证 `walk`；急停可触达、有人值守 |
 | `example_media_frames` | 板内订阅并落盘媒体帧 | 仅 aarch64，媒体服务和 SHM 已就绪 |
 
-High-level 既可作为 `aarch64` 程序在机器人板内运行，也可在外部 Linux x86_64 主机
+High-level 既可作为 `aarch64` 程序在机器人板内运行，也可在外部 Linux x86_64 或 ARM64（`aarch64_host`）主机
 运行。板载单设备模式不需要 SN；首次只读联调使用板载 High-level 网卡 `eth0.100`：
 
 ```bash

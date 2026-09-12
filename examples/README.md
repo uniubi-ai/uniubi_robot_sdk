@@ -86,7 +86,7 @@ On-board High-level, Low-level, and MediaBus examples require root privileges on
 | `example_media_frames` | Subscribes to and saves on-board media frames | `aarch64` only; media service and SHM ready |
 
 High-level can run either on the robot as an `aarch64` program or on an
-external Linux x86_64 host. On-board single-device mode does not require an SN;
+external Linux x86_64 or ARM64 (`aarch64_host`) host. On-board single-device mode does not require an SN;
 use the board High-level interface `eth0.100` for the first read-only run:
 
 ```bash

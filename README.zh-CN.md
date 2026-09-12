@@ -256,7 +256,7 @@ endif()
 | MediaBus | Orin 本机：音视频和布局 | 远端：PCM 采集与 RawBack 播放 | 本机 SHM 或远端音频服务 |
 
 `example_highlevel` 支持两种部署：可将 `aarch64` 程序放在机器人板内按单设备方式运行，
-也可在外部 Linux x86_64 主机运行 `x86_64` 程序进行远端 High-level 访问。外部访问必须
+也可在外部 Linux x86_64 或 ARM64（`aarch64_host`）主机运行 `x86_64` 程序进行远端 High-level 访问。外部访问必须
 使用能到达机器人的主机网卡和显式目标 SN，程序不会自动选择发现到的第一台设备。详见
 [High-level SDK API](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/uniubi_high_level_sdk.zh-CN.md)。
 SDK 内部的多设备能力不是另一种部署形态，而是用于支持外部主机发现设备并按 SN 创建 client。
@@ -279,7 +279,7 @@ sudo env LD_LIBRARY_PATH="$LD_LIBRARY_PATH" \
   ./build/examples/example_highlevel --iface eth0.100 --read-only
 ```
 
-在外部 Linux x86_64 主机运行时，先用 `ip -brief link` 核对并输入能到达机器人的真实
+在外部 Linux x86_64 或 ARM64（`aarch64_host`）主机运行时，先用 `ip -brief link` 核对并输入能到达机器人的真实
 网卡，再执行纯只读发现：
 
 ```bash
