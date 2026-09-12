@@ -38,7 +38,10 @@ target_link_libraries(example_lowlevel PRIVATE Uniubi::RobotMotionSdk)
 add_executable(example_highlevel example_highlevel.cpp)
 target_link_libraries(example_highlevel PRIVATE Uniubi::RobotMotionSdk)
 
-set(UNIUBI_EXAMPLE_TARGETS example_lowlevel example_highlevel)
+add_executable(example_highlevel_trc example_highlevel_trc.cpp)
+target_link_libraries(example_highlevel_trc PRIVATE Uniubi::RobotMotionSdk)
+
+set(UNIUBI_EXAMPLE_TARGETS example_lowlevel example_highlevel example_highlevel_trc)
 
 if(BUILD_SDK_TENSORRT_EXAMPLE)
     set(_UNIUBI_NVIDIA_FIND_OPTIONS)

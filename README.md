@@ -477,3 +477,5 @@ MediaBus is enabled by default on x86_64, i386, aarch64, and aarch64_host. Local
 ### NV21 and four-channel PCM capture
 
 Use `--capture-all` to save five NV21 images per camera and four 20-second PCM files. Configuration template, commands and validation: [NV21 and four-channel PCM capture](docs/media-capture.md).
+
+- [High-level controller input example](examples/example_highlevel_trc.cpp) — [TRC usage](docs/trc-observation.md)
