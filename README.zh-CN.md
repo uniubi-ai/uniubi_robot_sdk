@@ -1,5 +1,7 @@
 # Uniubi Robot SDK
 
+UWB 观测新增当前配对信标编号：IDL / C++ 为 `uwb.beaconId`，ROS 2 / Python 为 `uwb.beacon_id`。应结合 `pairState` / `pair_state` 和 `valid` 判断配对状态及观测有效性。本版本要求 SDK、消息定义和设备固件版本匹配；升级后需重新生成消息并重新编译应用和 Python 绑定，不支持旧布局混用。
+
 [English](README.md)
 
 Uniubi 机器人 C++ 运动控制 SDK 的公开开发仓库，提供公开头文件、C++ 示例、构建入口和按架构交付的预编译运行库。完整开发路径与 API 说明统一维护在 [`uniubi-docs`](https://github.com/uniubi-ai/uniubi-docs)。
