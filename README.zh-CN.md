@@ -436,3 +436,7 @@ DDS / ROS 2 协议直连属于 Advanced 集成路径，不是普通 C++ SDK 开�
 x86_64、i386、aarch64 默认开启 MediaBus。Orin 本机模式支持视频、音频和布局查询；远端模式通过 `media.setup(host)` 支持 PCM 采集和 RawBack 播放。远端视频订阅和布局查询返回 `kNotSupported`。SDK 头文件、运行库、Python 扩展与设备软件必须版本匹配。
 
 [example_audio.cpp](examples/example_audio.cpp) · [example_audio_rawback.cpp](examples/example_audio_rawback.cpp) · [音频使用指南](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/how-to/stream-pcm-audio.zh-CN.md)
+
+### NV21 与四路 PCM 采集
+
+使用 `--capture-all` 保存每路摄像头 5 张 NV21 图像和四路各 20 秒 PCM。配置模板、命令与验收方法：[NV21 与四路 PCM 采集](docs/media-capture.zh-CN.md)。

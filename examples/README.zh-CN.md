@@ -231,3 +231,7 @@ NVIDIA APT 交叉包路径和 Orin 原生构建路径均已验证；SDK 仓库�
 二进制库。
 
 音频示例： [example_audio.cpp](example_audio.cpp)（本机采集） · [example_audio_rawback.cpp](example_audio_rawback.cpp)（本机或远端播放，可同时采集）。远端参数和环境见 [PCM guide](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/how-to/stream-pcm-audio.zh-CN.md).
+
+### NV21 与四路 PCM 采集
+
+使用 `--capture-all` 保存每路摄像头 5 张 NV21 图像和四路各 20 秒 PCM。配置模板、命令与验收方法：[NV21 与四路 PCM 采集](../docs/media-capture.zh-CN.md)。

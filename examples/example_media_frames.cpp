@@ -7,6 +7,10 @@
  * ========================================================
  */
 
+#include <algorithm>
+#include <mutex>
+#include <vector>
+#include <climits>
 #include <atomic>
 #include <chrono>
 #include <cstdint>
@@ -38,6 +42,8 @@ struct Options {
     int32_t audioChannel = 0;
     int32_t seconds = 10;
     std::string networkInterface;
+    bool pcm4 = false;
+    std::string pcmDir;
 };
 
 struct Counter {
@@ -60,12 +66,21 @@ int32_t parseInt(const char* value, int32_t fallback) {
         return fallback;
     }
     char* end = nullptr;
+    errno = 0;
     long parsed = std::strtol(value, &end, 10);
-    return end != value ? static_cast<int32_t>(parsed) : fallback;
+    return !errno && end != value && *end == '\0' && parsed >= INT32_MIN && parsed <= INT32_MAX ? static_cast<int32_t>(parsed) : fallback;
 }
 
 Options parseArgs(int argc, char** argv) {
     Options options;
+    if (argc > 1 && (std::string(argv[1]) == "--pcm4" || std::string(argv[1]) == "--capture-all")) {
+        options.pcm4 = true;
+        if (argc > 5) { options.seconds = 0; return options; }
+        options.pcmDir = argc > 2 ? argv[2] : "";
+        options.seconds = argc > 3 ? parseInt(argv[3], 0) : 20;
+        options.networkInterface = argc > 4 && std::string(argv[4]) != "-" ? argv[4] : "";
+        return options;
+    }
     if (argc > 1 && std::string(argv[1]) != "-") {
         options.configFile = argv[1];
     }
@@ -93,8 +108,10 @@ Options parseArgs(int argc, char** argv) {
 void printUsage(const char* program) {
     std::printf("usage: %s [config|-] [client_id] [device_id|-] [video_channel] [audio_channel] [seconds] [network_iface|-]\n",
                 program);
+    std::printf("       %s --pcm4 <new-output-dir> [seconds:1..60, default 20] [network_iface|-]\n", program);
+    std::printf("       --capture-all (alias --pcm4): 5 NV21 images per camera and 4 PCM channels\n");
     std::printf("       media frame subscription is supported only on aarch64 local board deployment.\n");
-    std::printf("       config omitted or '-' uses the SDK built-in mediaBusDemo streamDefine.\n");
+    std::printf("       config configures the Motion SDK service; MediaBus reads /etc/robot/sdk_config.json.\n");
     std::printf("example: %s - mediaFrameExample - 0 0 10 eth0\n", program);
 }
 
@@ -503,6 +520,136 @@ void printSummary(const Stats& stats) {
                 kDumpDir);
 }
 
+// Bounded copies in callbacks; save two NV21 cameras and four PCM streams after shutdown.
+bool capturePcm4(const IMediaBusClient::Ptr& media, const Options& options) {
+    const size_t targetBytes = static_cast<size_t>(options.seconds) * 16000 * sizeof(int16_t);
+    std::vector<uint8_t> pcm[4];
+    uint64_t frames[4] = {}, invalid[4] = {}, duplicates[4] = {}, lastPts[4] = {};
+    bool subscribed[4] = {};
+    bool accepting = false;
+    std::mutex mutex;
+    std::vector<std::vector<uint8_t>> images[2];
+    std::vector<std::string> imageNames[2];
+    uint64_t videoFrames[2] = {}, videoInvalid[2] = {};
+    bool videoSubscribed[2] = {};
+    for (auto& buffer : pcm) buffer.reserve(targetBytes);
+    bool ready = true;
+    for (int32_t ch = 0; ch < 4; ++ch) {
+        subscribed[ch] = media->startRawAudioFrame(ch, [&, ch](int32_t channel, const AudioFrame& frame) {
+            std::lock_guard<std::mutex> guard(mutex);
+            if (!accepting || pcm[ch].size() >= targetBytes) return;
+            const auto& info = frame.getFrameInfo();
+            if (channel != ch || !frame.data() || !frame.size() || frame.size() % 2 ||
+                info.dataType != 0 || info.sampleRate != 16000 || info.sampleFormat != 16 || info.channelCount != 1) {
+                ++invalid[ch];
+                return;
+            }
+            if (frames[ch] && info.timestamp <= lastPts[ch]) {
+                ++duplicates[ch];
+                return;
+            }
+            lastPts[ch] = info.timestamp;
+            const size_t bytes = std::min(static_cast<size_t>(frame.size()), targetBytes - pcm[ch].size());
+            pcm[ch].insert(pcm[ch].end(), frame.data(), frame.data() + bytes);
+            ++frames[ch];
+        });
+        std::printf("[pcm4-subscribe] ch=%d ok=%d error=%d\n", ch, subscribed[ch], media->getLastError());
+        ready = ready && subscribed[ch];
+    }
+    for (int32_t ch = 0; ch < 2; ++ch) {
+        videoSubscribed[ch] = media->startRawVideoFrame(ch, [&, ch](int32_t channel, const VideoFrame& frame) {
+            std::lock_guard<std::mutex> guard(mutex);
+            if (!accepting || images[ch].size() >= 5) return;
+            ++videoFrames[ch];
+            const auto& info = frame.getFrameInfo();
+            if (channel != ch || info.pixelFormat != Uface::Media::mediaPixelFormatNV21 ||
+                !info.width || !info.height || info.width % 2 || info.height % 2 ||
+                info.width > 4096 || info.height > 2160 || !info.virAddr[0] || !info.virAddr[1] ||
+                info.stride[0] < info.width || info.stride[1] < info.width) {
+                ++videoInvalid[ch];
+                return;
+            }
+            // 只复制前5帧，去掉stride填充，不长期占用服务端图像缓冲区。
+            if (images[ch].size() < 5) {
+                std::vector<uint8_t> image(static_cast<size_t>(info.width) * info.height * 3 / 2);
+                for (uint32_t row = 0; row < info.height; ++row)
+                    std::memcpy(image.data() + static_cast<size_t>(row) * info.width,
+                                info.virAddr[0] + static_cast<size_t>(row) * info.stride[0], info.width);
+                for (uint32_t row = 0; row < info.height / 2; ++row)
+                    std::memcpy(image.data() + static_cast<size_t>(info.width) * info.height + static_cast<size_t>(row) * info.width,
+                                info.virAddr[1] + static_cast<size_t>(row) * info.stride[1], info.width);
+                imageNames[ch].push_back("/camera" + std::to_string(ch) + "_" + std::to_string(info.width) + "x" +
+                    std::to_string(info.height) + "_pts" + std::to_string(info.timestamp) + "_" + std::to_string(videoFrames[ch]) + ".nv21");
+                images[ch].push_back(std::move(image));
+            }
+        });
+        std::printf("[video-subscribe] ch=%d ok=%d error=%d\n", ch, videoSubscribed[ch], media->getLastError());
+        ready = ready && videoSubscribed[ch];
+    }
+    if (ready) {
+        {
+            std::lock_guard<std::mutex> guard(mutex);
+            accepting = true;
+        }
+        std::printf("[pcm4-recording] SPEAK NOW: %d seconds, output=%s\n", options.seconds, options.pcmDir.c_str());
+        std::fflush(stdout);
+        const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(options.seconds + 5);
+        const auto minimumEnd = std::chrono::steady_clock::now() + std::chrono::seconds(options.seconds);
+        while (std::chrono::steady_clock::now() < deadline) {
+            bool complete = true;
+            {
+                std::lock_guard<std::mutex> guard(mutex);
+                for (const auto& buffer : pcm) complete = complete && buffer.size() == targetBytes;
+                for (const auto& frames : images) complete = complete && frames.size() == 5;
+            }
+            if (complete && std::chrono::steady_clock::now() >= minimumEnd) break;
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        }
+    }
+    {
+        std::lock_guard<std::mutex> guard(mutex);
+        accepting = false;
+    }
+    for (int32_t ch = 0; ch < 4; ++ch) if (subscribed[ch]) media->stopRawAudioFrame(ch);
+    for (int32_t ch = 0; ch < 2; ++ch) if (videoSubscribed[ch]) media->stopRawVideoFrame(ch);
+    media->shutdown(); // 注销并停止回调，局部缓冲区随后才可销毁。
+    bool success = ready;
+    for (int32_t ch = 0; ch < 4; ++ch) {
+        const std::string path = options.pcmDir + "/dmic_ch" + std::to_string(ch) + ".pcm";
+        FILE* fp = std::fopen(path.c_str(), "wb");
+        bool saved = false;
+        if (fp) {
+            saved = std::fwrite(pcm[ch].data(), 1, pcm[ch].size(), fp) == pcm[ch].size();
+            saved = std::fclose(fp) == 0 && saved;
+        }
+        uint64_t nonzero = 0;
+        for (size_t i = 0; i + 1 < pcm[ch].size(); i += 2) {
+            if (pcm[ch][i] || pcm[ch][i + 1]) ++nonzero;
+        }
+        std::printf("[pcm4-summary] ch=%d frames=%llu bytes=%zu seconds=%.3f invalid=%llu duplicates=%llu nonzero=%llu saved=%d path=%s\n",
+                    ch, static_cast<unsigned long long>(frames[ch]), pcm[ch].size(), pcm[ch].size() / 32000.0,
+                    static_cast<unsigned long long>(invalid[ch]), static_cast<unsigned long long>(duplicates[ch]),
+                    static_cast<unsigned long long>(nonzero), saved, path.c_str());
+        // 非零样本数仅用于诊断；已知硬件静音不影响接收和保存验收。
+        success = success && saved && pcm[ch].size() == targetBytes && invalid[ch] == 0 && duplicates[ch] == 0;
+    }
+    for (int32_t ch = 0; ch < 2; ++ch) {
+        bool saved = true;
+        for (size_t i = 0; i < images[ch].size(); ++i) {
+            const std::string path = options.pcmDir + imageNames[ch][i];
+            FILE* fp = std::fopen(path.c_str(), "wb");
+            if (!fp) { saved = false; continue; }
+            saved = (std::fwrite(images[ch][i].data(), 1, images[ch][i].size(), fp) == images[ch][i].size()) && saved;
+            saved = (std::fclose(fp) == 0) && saved;
+        }
+        std::printf("[video-summary] ch=%d frames=%llu nv21=%zu invalid=%llu saved=%d\n",
+            ch, static_cast<unsigned long long>(videoFrames[ch]), images[ch].size(),
+            static_cast<unsigned long long>(videoInvalid[ch]), saved);
+        success = success && saved && images[ch].size() == 5 && !videoInvalid[ch];
+    }
+    return success;
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
@@ -513,7 +660,17 @@ int main(int argc, char** argv) {
 
     const Options options = parseArgs(argc, argv);
     printUsage(argv[0]);
-    ensureDumpDir();
+#if !defined(__aarch64__)
+    std::fprintf(stderr, "media frames require an aarch64 local board\n");
+    return 1;
+#endif
+    if (options.pcm4) {
+        if (options.pcmDir.empty() || options.seconds < 1 || options.seconds > 60 ||
+            ::mkdir(options.pcmDir.c_str(), 0755) != 0) {
+            std::fprintf(stderr, "capture requires 1..60 seconds and a new output directory\n");
+            return 1;
+        }
+    } else if (!ensureDumpDir()) return 1;
 
     auto* service = IMotionSdkService::instance();
     if (!options.networkInterface.empty()) {
@@ -529,8 +686,8 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    if (service->isMultiDevice() && options.deviceId.empty()) {
-        std::fprintf(stderr, "multi-device mode requires device_id argument\n");
+    if (service->isMultiDevice() || !options.deviceId.empty()) {
+        std::fprintf(stderr, "media frames require local deployment without device_id\n");
         service->shutdown();
         return 1;
     }
@@ -575,6 +732,12 @@ int main(int argc, char** argv) {
                     layout.micNum, layout.cameraNum, layout.videoEncoderNum);
     }
 
+    if (options.pcm4) {
+        const bool success = capturePcm4(media, options);
+        client->disconnect();
+        service->shutdown();
+        return success ? 0 : 2;
+    }
     Stats stats;
     const bool videoRawOk = media->startRawVideoFrame(
         options.videoChannel,
