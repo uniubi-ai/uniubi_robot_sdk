@@ -455,9 +455,20 @@ Original UniUbi code, headers, examples, and documentation in this repository ar
 
 - [Remote-controller observations](docs/trc-observation.md)
 
+## RTSP camera video
+
+x86 and ARM64 hosts can access two camera streams over RTSP without calling the SDK or acquiring motion control.
+
+```text
+rtsp://<DEVICE_IP>:554/live?channel=1&stream=0
+rtsp://<DEVICE_IP>:554/live?channel=2&stream=0
+```
+
+Use the device Ethernet or Wi-Fi IP address. Set `channel` to `1` or `2`; `stream` is always `0`. Open the URL in an RTSP client such as VLC or FFplay. See [RTSP remote camera streaming](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/how-to/use-media-and-device-io.md#rtsp-remote-camera-streaming) for complete commands.
+
 ## PCM audio capture and playback
 
-MediaBus is enabled by default on x86_64, i386, aarch64, and aarch64_host. Local Orin deployment supports video, audio, and layout queries; remote deployment supports PCM capture and RawBack playback via `media.setup(host)`. Remote video subscriptions and layout queries return `kNotSupported`. SDK headers, runtime libraries, Python extensions, and device software must use matching versions.
+MediaBus is enabled by default on x86_64, i386, aarch64, and aarch64_host. Local Orin deployment supports video, audio, and layout queries; remote deployment supports PCM capture and RawBack playback via `media.setup(host)`. MediaBus SDK remote-video subscriptions and layout queries return `kNotSupported`; remote camera video is available independently over RTSP. SDK headers, runtime libraries, Python extensions, and device software must use matching versions.
 
 [example_audio.cpp](examples/example_audio.cpp) · [example_audio_rawback.cpp](examples/example_audio_rawback.cpp) · [Audio guide](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/how-to/stream-pcm-audio.md)
 
