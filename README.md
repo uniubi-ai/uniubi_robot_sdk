@@ -377,7 +377,7 @@ lowlevel> quit
 
 For a Low-level application to access remote-controller input, the remote controller must be connected. If it is disconnected, press `M` until the robot announces “遥控器已连接” (remote controller connected). This is an input prerequisite and does not mean leaving Low-level control.
 
-The example uses the standard DV500 12-joint layout and posture parameters validated on the board. It refuses to enable posture control when the layout does not match. Keep the robot fully suspended with all feet clear throughout this Low-level example; do not run it directly on the ground. See the [Low-level SDK API](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/uniubi_low_level_sdk.md) for state requirements.
+The example uses the standard cerebellum controller 12-joint layout and posture parameters validated on the board. It refuses to enable posture control when the layout does not match. Keep the robot fully suspended with all feet clear throughout this Low-level example; do not run it directly on the ground. See the [Low-level SDK API](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/uniubi_low_level_sdk.md) for state requirements.
 
 ### Low-level TensorRT policy validation (Jetson Orin)
 
@@ -438,7 +438,7 @@ On exit, the program calls `setMotionEnable(false)` only when needed, then disco
 
 ## Documentation
 
-- [Custom audio: upload by URL and play](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/how-to/use-media-and-device-io.md#custom-audio-upload-by-url-and-play): serve an HTTP URL from Orin/PC, let DV500 import the file, and wait for its audio ID before playback; includes a complete Python example.
+- [Custom audio: upload by URL and play](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/how-to/use-media-and-device-io.md#custom-audio-upload-by-url-and-play): serve an HTTP URL from Orin/PC, let cerebellum controller import the file, and wait for its audio ID before playback; includes a complete Python example.
 - [Troubleshooting](docs/troubleshooting.md)
 - [`uniubi-docs` development entry point](https://github.com/uniubi-ai/uniubi-docs)
 - [Build, installation, and cross-compilation](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/BUILD.md)

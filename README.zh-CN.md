@@ -374,7 +374,7 @@ lowlevel> quit
 Low-level 程序要接入遥控器输入时，遥控器必须处于已连接状态；若已断开，按 `M` 键直到听到
 “遥控器已连接”的语音提示。这个状态是接收遥控器输入的前置条件，不表示退出 Low-level 控制。
 
-该示例使用标准 DV500 12 关节布局和板端已验证的姿态参数；布局不匹配时会拒绝使能姿态控制。Low-level 示例测试期间必须始终保持机器狗四脚腾空且能够自由活动，不得直接放在地面执行。接口状态要求见 [Low-level SDK API](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/uniubi_low_level_sdk.zh-CN.md)。
+该示例使用标准 小脑 12 关节布局和板端已验证的姿态参数；布局不匹配时会拒绝使能姿态控制。Low-level 示例测试期间必须始终保持机器狗四脚腾空且能够自由活动，不得直接放在地面执行。接口状态要求见 [Low-level SDK API](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/uniubi_low_level_sdk.zh-CN.md)。
 
 ### Low-level TensorRT 策略验证（Jetson Orin）
 
@@ -442,7 +442,7 @@ sudo env LD_LIBRARY_PATH="$LD_LIBRARY_PATH" \
 
 ## 文档导航
 
-- [自定义音频：通过 URL 上传并播放](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/how-to/use-media-and-device-io.zh-CN.md#自定义音频通过-url-上传并播放)：Orin/PC 提供 HTTP URL，DV500 下载入库，等待音频 ID 出现后再播放；包含 Python 完整示例。
+- [自定义音频：通过 URL 上传并播放](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/how-to/use-media-and-device-io.zh-CN.md#自定义音频通过-url-上传并播放)：Orin/PC 提供 HTTP URL，小脑 下载入库，等待音频 ID 出现后再播放；包含 Python 完整示例。
 - [故障排查](docs/troubleshooting.zh-CN.md)
 - [`uniubi-docs` 开发入口](https://github.com/uniubi-ai/uniubi-docs)
 - [构建、安装和交叉编译](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/BUILD.zh-CN.md)
