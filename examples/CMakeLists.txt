@@ -11,14 +11,7 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     set(CMAKE_CXX_STANDARD_REQUIRED ON)
     find_package(UniubiRobotSdk CONFIG REQUIRED)
 
-    if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64|ARM64)$")
-        set(_UNIUBI_MEDIA_EXAMPLE_DEFAULT ON)
-    else()
-        set(_UNIUBI_MEDIA_EXAMPLE_DEFAULT OFF)
-    endif()
-    option(BUILD_SDK_MEDIA_EXAMPLE
-        "Build MediaBus example; supported only on aarch64 local deployment"
-        ${_UNIUBI_MEDIA_EXAMPLE_DEFAULT})
+    option(BUILD_SDK_MEDIA_EXAMPLE "Build media and audio examples" ON)
 endif()
 
 # TensorRT Low-level 示例默认只在 Orin 原生构建时启用。交叉编译需要目标
@@ -128,7 +121,11 @@ if(BUILD_SDK_MEDIA_EXAMPLE)
     add_executable(example_media_frames example_media_frames.cpp)
     target_link_libraries(example_media_frames
         PRIVATE Uniubi::RobotMotionSdk Uniubi::MediaBus)
-    list(APPEND UNIUBI_EXAMPLE_TARGETS example_media_frames)
+    add_executable(example_audio example_audio.cpp)
+    target_link_libraries(example_audio PRIVATE Uniubi::RobotMotionSdk Uniubi::MediaBus)
+    add_executable(example_audio_rawback example_audio_rawback.cpp)
+    target_link_libraries(example_audio_rawback PRIVATE Uniubi::RobotMotionSdk Uniubi::MediaBus)
+    list(APPEND UNIUBI_EXAMPLE_TARGETS example_media_frames example_audio example_audio_rawback)
 endif()
 
 # The prebuilt aarch64 SDK depends on libraries that are resolved on the Orin

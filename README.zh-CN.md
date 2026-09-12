@@ -152,7 +152,7 @@ sudo env LD_LIBRARY_PATH="$LD_LIBRARY_PATH" \
   ./build/examples/example_highlevel --iface eth0.100 --read-only
 ```
 
-直接编译的示例位于 `build/examples/`；交叉编译的示例位于 `build-aarch64/examples/`。`example_media_frames` 在 `aarch64` 目标上默认构建；`example_lowlevel_tensorrt` 只在 Orin 原生构建时默认启用，交叉编译需显式提供目标端 TensorRT/CUDA 开发文件。
+直接编译的示例位于 `build/examples/`；交叉编译的示例位于 `build-aarch64/examples/`。媒体和音频示例在所有支持架构默认构建；`example_lowlevel_tensorrt` 只在 Orin 原生构建时默认启用，交叉编译需显式提供目标端 TensorRT/CUDA 开发文件。
 
 ### 7. 未安装时集成到自己的 CMake 项目
 
@@ -212,7 +212,7 @@ endif()
 |---|---:|---:|---|
 | High-level 控制与观测 | 支持 | 支持 | 外部主机即使只访问一台机器人，也必须选择网卡并使用设备 SN 创建 client |
 | Low-level 关节控制 | 支持 | 不支持 | 直连本地 MotionServer，数据面使用 SHM |
-| MediaBus 帧订阅 | 仅 `aarch64` | 不支持 | 依赖板内媒体服务、配置和 SHM |
+| MediaBus | Orin 本机：音视频和布局 | 远端：PCM 采集与 RawBack 播放 | 本机 SHM 或远端音频服务 |
 
 `example_highlevel` 支持两种部署：可将 `aarch64` 程序放在机器人板内按单设备方式运行，
 也可在外部 Linux x86_64 主机运行 `x86_64` 程序进行远端 High-level 访问。外部访问必须
@@ -430,3 +430,9 @@ DDS / ROS 2 协议直连属于 Advanced 集成路径，不是普通 C++ SDK 开�
 本仓库中的 UniUbi 原创代码、头文件、示例和文档使用 Apache License 2.0。预编译库和第三方组件按各自条款授权。详见 [LICENSE](LICENSE)、[NOTICE](NOTICE) 和 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
 
 - [手柄观测](docs/trc-observation.zh-CN.md)
+
+## PCM 音频采集与播放
+
+x86_64、i386、aarch64 默认开启 MediaBus。Orin 本机模式支持视频、音频和布局查询；远端模式通过 `media.setup(host)` 支持 PCM 采集和 RawBack 播放。远端视频订阅和布局查询返回 `kNotSupported`。SDK 头文件、运行库、Python 扩展与设备软件必须版本匹配。
+
+[example_audio.cpp](examples/example_audio.cpp) · [example_audio_rawback.cpp](examples/example_audio_rawback.cpp) · [音频使用指南](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/how-to/stream-pcm-audio.zh-CN.md)

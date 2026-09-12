@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Enable local and remote MediaBus audio on x86_64, i386, and aarch64; synchronize AudioRawBackStream headers, matched runtimes, and capture/playback examples.
 - Expose the paired UWB beacon ID as `sensor.uwb.beaconId` (UWB size 16 bytes; sensor observation size 80 bytes). Requires matching device firmware and rebuilt application/Python bindings.
 - Initialize repository structure.
 - Add packed `MotionOdometry` protocol data with ABI and type-trait checks.

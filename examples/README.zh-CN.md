@@ -229,3 +229,5 @@ lowlevel> quit
 `UNIUBI_CUDA_ROOT` 提供与目标 JetPack 匹配的 aarch64 头文件和链接库。上面的
 NVIDIA APT 交叉包路径和 Orin 原生构建路径均已验证；SDK 仓库不分发 NVIDIA
 二进制库。
+
+音频示例： [example_audio.cpp](example_audio.cpp)（本机采集） · [example_audio_rawback.cpp](example_audio_rawback.cpp)（本机或远端播放，可同时采集）。远端参数和环境见 [PCM guide](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/how-to/stream-pcm-audio.zh-CN.md).

@@ -219,3 +219,5 @@ Do not execute `walk` with all four feet suspended. During both stages, keep the
 On exit, this policy example calls `setMotionEnable(false)` only if it is already in the prepared state, then disconnects and shuts down the SDK. It does not call `emergencyStop()` or `restoreMotionControlMode()`. This exit behavior differs from the generic `example_lowlevel` above and must not be conflated with it.
 
 The example is disabled by default for cross-compilation. When `-DBUILD_SDK_TENSORRT_EXAMPLE=ON` is set explicitly, `UNIUBI_TENSORRT_ROOT` and `UNIUBI_CUDA_ROOT` must provide aarch64 headers and link libraries that match the target JetPack. Both the NVIDIA APT cross-package path above and native Orin build path have been validated. The SDK repository does not redistribute NVIDIA binary libraries.
+
+Audio examples: [example_audio.cpp](example_audio.cpp) (local capture) · [example_audio_rawback.cpp](example_audio_rawback.cpp) (local or remote playback, with optional capture). For remote arguments and setup, see [PCM guide](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/how-to/stream-pcm-audio.md).

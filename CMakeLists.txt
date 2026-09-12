@@ -111,28 +111,18 @@ set_target_properties(Uniubi::MediaBus PROPERTIES
     INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/include"
     INTERFACE_LINK_LIBRARIES "${UNIUBI_UBASE_LIB};Threads::Threads")
 
-set(UNIUBI_MEDIABUS_SUPPORTED OFF)
-if(UNIUBI_SDK_ARCH_DIR STREQUAL "aarch64")
-    set(UNIUBI_MEDIABUS_SUPPORTED ON)
-endif()
-
-set(BUILD_SDK_MEDIA_EXAMPLE_DEFAULT ${UNIUBI_MEDIABUS_SUPPORTED})
-option(BUILD_SDK_MEDIA_EXAMPLE "Build MediaBus C++ example; supported only on aarch64 local deployment" ${BUILD_SDK_MEDIA_EXAMPLE_DEFAULT})
-
-if(BUILD_SDK_MEDIA_EXAMPLE AND NOT UNIUBI_MEDIABUS_SUPPORTED)
-    message(WARNING "MediaBus example is only supported on aarch64 local deployment; disabling for ${UNIUBI_SDK_ARCH_DIR}.")
-    set(BUILD_SDK_MEDIA_EXAMPLE OFF CACHE BOOL "Build MediaBus C++ example; supported only on aarch64 local deployment" FORCE)
-endif()
+# All packaged architectures expose MediaBus; remote mode supports audio only.
+option(BUILD_SDK_MEDIA_EXAMPLE "Build media and audio examples" ON)
 
 # 公开头根：随仓库自带（include/），无需外部供给
 set(UNIUBI_SDK_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include CACHE PATH "Uniubi SDK public headers root")
 
 message(STATUS "Uniubi SDK arch:    ${UNIUBI_SDK_ARCH_DIR} (processor=${CMAKE_SYSTEM_PROCESSOR})")
 message(STATUS "Uniubi SDK library: ${UNIUBI_ROBOT_MOTION_SDK_LIB}")
-message(STATUS "Uniubi MediaBus library: ${UNIUBI_MEDIABUS_LIB} (runtime dependency; client API supported only on aarch64 local deployment)")
+message(STATUS "Uniubi MediaBus library: ${UNIUBI_MEDIABUS_LIB} (runtime dependency; client API Orin local or remote audio deployment)")
 message(STATUS "Uniubi UBase library: ${UNIUBI_UBASE_LIB}")
 if(NOT BUILD_SDK_MEDIA_EXAMPLE)
-    message(STATUS "Uniubi MediaBus example: disabled (${UNIUBI_SDK_ARCH_DIR}; supported only on aarch64 local deployment)")
+    message(STATUS "Uniubi MediaBus example: disabled (${UNIUBI_SDK_ARCH_DIR}; Orin local or remote audio deployment)")
 endif()
 message(STATUS "Uniubi SDK include: ${UNIUBI_SDK_INCLUDE_DIR}")
 

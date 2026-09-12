@@ -71,6 +71,7 @@ public:
 public:
     /**
      * @brief 释放共享资源 + 清空配置
+     * @note 应先停止媒体并断开所有客户端，再调用此方法。
      */
     virtual void shutdown() = 0;
     /**

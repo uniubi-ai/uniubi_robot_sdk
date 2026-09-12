@@ -150,7 +150,7 @@ sudo env LD_LIBRARY_PATH="$LD_LIBRARY_PATH" \
   ./build/examples/example_highlevel --iface eth0.100 --read-only
 ```
 
-Native-build examples are under `build/examples/`; cross-build examples are under `build-aarch64/examples/`. `example_media_frames` is built by default for `aarch64`. `example_lowlevel_tensorrt` is enabled by default only for a native Orin build; a cross-build must explicitly provide the target TensorRT/CUDA development files.
+Native-build examples are under `build/examples/`; cross-build examples are under `build-aarch64/examples/`. Media examples are built by default on all supported architectures; the video/layout example still requires local Orin deployment. `example_lowlevel_tensorrt` is enabled by default only for a native Orin build; a cross-build must explicitly provide the target TensorRT/CUDA development files.
 
 ### 7. Integrate without installing the SDK
 
@@ -210,7 +210,7 @@ If you have not selected a control mode yet, start with the [`uniubi-docs` Quick
 |---|---:|---:|---|
 | High-level control and observation | Supported | Supported | External-host access must select a network interface and create a client with the device SN, even for one robot |
 | Low-level joint control | Supported | Not supported | Connects directly to the local MotionServer; the data plane uses SHM |
-| MediaBus frame subscription | `aarch64` only | Not supported | Depends on the on-board media service, configuration, and SHM |
+| MediaBus | Local Orin: audio/video/layout | Remote: PCM capture and RawBack playback | Local SHM or remote audio service |
 
 `example_highlevel` supports both deployment forms: run its `aarch64` binary on
 the robot for the on-board single-device workflow, or run its `x86_64` binary on
@@ -426,3 +426,9 @@ Direct DDS / ROS 2 protocol integration is an Advanced path rather than the stan
 Original UniUbi code, headers, examples, and documentation in this repository are licensed under the Apache License 2.0. Prebuilt libraries and third-party components are licensed under their respective terms. See [LICENSE](LICENSE), [NOTICE](NOTICE), and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 - [Remote-controller observations](docs/trc-observation.md)
+
+## PCM audio capture and playback
+
+MediaBus is enabled by default on x86_64, i386, and aarch64. Local Orin deployment supports video, audio, and layout queries; remote deployment supports PCM capture and RawBack playback via `media.setup(host)`. Remote video subscriptions and layout queries return `kNotSupported`. SDK headers, runtime libraries, Python extensions, and device software must use matching versions.
+
+[example_audio.cpp](examples/example_audio.cpp) · [example_audio_rawback.cpp](examples/example_audio_rawback.cpp) · [Audio guide](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/how-to/stream-pcm-audio.md)
