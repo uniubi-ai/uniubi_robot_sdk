@@ -1,7 +1,5 @@
 # Uniubi Robot SDK
 
-UWB observations expose the currently paired beacon ID as `uwb.beaconId` in IDL/C++ and `uwb.beacon_id` in ROS 2/Python. Check pairing state (`pairState` / `pair_state`) and `valid` alongside this ID. This version requires matching SDK, message definitions, and device firmware. Regenerate messages and rebuild applications and Python bindings after upgrading; mixing old and new layouts is unsupported.
-
 [中文文档](README.zh-CN.md)
 
 The public development repository for the Uniubi Robot C++ motion-control SDK. It provides public headers, C++ examples, build entry points, and prebuilt runtime libraries for each supported architecture. The complete development workflow and API documentation are maintained in [`uniubi-docs`](https://github.com/uniubi-ai/uniubi-docs).
