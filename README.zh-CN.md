@@ -254,6 +254,8 @@ SDK 内部的多设备能力不是另一种部署形态，而是用于支持外�
 
 当前设备上的板载 High-level、Low-level 和 MediaBus 示例需要 root 权限，命令使用 `sudo env LD_LIBRARY_PATH="$LD_LIBRARY_PATH"`；外部 Linux x86_64 High-level 发现与 client 命令使用已导出的运行库路径，以普通用户运行。
 
+**外部主机网线直连机器人网口时**，先在开发板上给机器人分配 IP（见[连接外设](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/how-to/connect-peripherals.zh-CN.md)）。
+
 ### High-level CLI：选择板载或外部 Linux 运行
 
 `example_highlevel` 是交互式 High-level 工具，启动后不会自动执行动作。首次连接使用 `--read-only`，不申请运动控制权：
@@ -306,6 +308,12 @@ highlevel> quit
 ```
 
 `odom` 已合并到 High-level CLI。里程计只在机器人处于 Walk 动作期间有效；`position` 已由设备端累计，上层不要再次积分。
+
+**外部主机网线直连机器人网口时**，加 `--dont-route`，只使用直连网段的 DDS 地址。机器人 Wi-Fi 同时开启时必须加，否则 DDS 可能选中主机不可达的 Wi-Fi 地址；机器人 Wi-Fi 未开启时可加可不加：
+
+```bash
+./build/examples/example_highlevel --iface "$UNIUBI_IFACE" --device-id "$UNIUBI_DEVICE_SN" --dont-route --read-only
+```
 
 ### High-level 控制验证
 

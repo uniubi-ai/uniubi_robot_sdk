@@ -59,6 +59,7 @@ struct Options {
     bool readOnly = false;
     bool discoverOnly = false;
     bool ifaceProvided = false;
+    bool dontRoute = false;
 };
 
 void printUsage(const char* program) {
@@ -71,6 +72,7 @@ void printUsage(const char* program) {
         << "  --lease-ms MS       control lease hint (default: 15000)\n"
         << "  --read-only         connect without acquiring High-level control\n"
         << "  --discover-only     list discovered devices, then exit without connecting\n"
+        << "  --dont-route        keep only directly connected DDS locators (direct cable; set if robot Wi-Fi is on)\n"
         << "  -h, --help          show this help\n\n"
         << "The CLI never starts an action automatically. Type 'help' after connecting.\n";
 }
@@ -98,6 +100,10 @@ bool parseOptions(int argc, char** argv, Options& options) {
         }
         if (arg == "--discover-only") {
             options.discoverOnly = true;
+            continue;
+        }
+        if (arg == "--dont-route") {
+            options.dontRoute = true;
             continue;
         }
         if (arg == "--iface" || arg == "--client-id" || arg == "--device-id" ||
@@ -592,6 +598,12 @@ int main(int argc, char** argv) {
             discoveryResults->add(sn, info);
         });
     service->setNetworkInterface(options.iface.c_str());
+    if (options.dontRoute) {
+        /// Direct cable to the robot: keep only directly connected DDS locators, so DDS will not
+        /// pick a robot address that this host cannot reach.
+        const std::string netCfg = "{\"iface\":\"" + options.iface + "\",\"dont_route\":true}";
+        service->setNetworkConfig(netCfg.c_str());
+    }
     if (!service->initialService(nullptr, options.clientId.c_str())) {
         std::cerr << "[FAIL] SDK init failed\n";
         return 1;

@@ -79,7 +79,7 @@
     "uniubi/robot_sdk/MotionHighLevelClient.h": "19cd93843c09c274d9be201aa733fca71940c261ae3faa21ed23d613205a5456",
     "uniubi/robot_sdk/MotionLowLevelClient.h": "8cb823c410b6b1ceea346fb642112abdfd54f6952ad1a86174ad27bd14dfc561",
     "uniubi/robot_sdk/MotionSdkProtocol.h": "99f7ab552f3cbc5eb7c38af76da1c0220f354ce3c3ee102838d766574d6119bb",
-    "uniubi/robot_sdk/MotionSdkService.h": "5877e3bd6b9f9b85f6ec428d49b9782a71f0850ef5e105928d80e363446a40b4",
+    "uniubi/robot_sdk/MotionSdkService.h": "470914e3e7a09c277bc6b2e421fc9c663f3fcf04f7a6090f5ed283d3e7f1da0e",
     "uniubi/robot_sdk/UBase/Define.h": "5966ce785068d0c26cdaeed548fbf818d5913a99715685a437bad092a5a596cc",
     "uniubi/robot_sdk/UBase/Delegate.h": "18c3a3a36f473d06ad4595e4952b7cc59a7ec5abec5569d50df65001a7a20af0"
   },
@@ -257,7 +257,7 @@
         ]
       },
       "libmediaBus.so": {
-        "sha256": "f243f97cc2f0c8bffc0a130bab75258cbec47b53de955d516213142216202eb8",
+        "sha256": "2928ee573cb39d0443888336f5d0fa6fb7678c8020a3f28d915d0dbfb12822eb",
         "needed": [
           "libudbus.so",
           "libcuda.so.1",
@@ -293,7 +293,7 @@
         ]
       },
       "librobotMotionSdk.so": {
-        "sha256": "b848a8f77c55a209b022b378d3de349e44b1d1c178a0942fbd51218c08521307",
+        "sha256": "03e6514450d242175d5fc9e96f18a8d51bb39f773f0c2358a93b122cf075629a",
         "needed": [
           "libuutils.so",
           "libatomic.so.1",
@@ -353,7 +353,7 @@
         ]
       },
       "libubase.so": {
-        "sha256": "3a541f605866c92a83bf70a302922dc4319ce82cd1c34d0ea774137c32871d56",
+        "sha256": "3fd0d227965b5fc8fb7a996588e144a0b3701e7cc48eb5a7947f57cfb2f968c4",
         "needed": [
           "libstdc++.so.6",
           "libm.so.6",
@@ -363,7 +363,7 @@
         ]
       },
       "libudbus.so": {
-        "sha256": "9c873fef5cea0d74932c242a9c1856d35ee2175596d226702129cd10f00ea99e",
+        "sha256": "5ea4233b39a5b84391f767352f58f14013cf9b64e18046fad48266f2c6a74881",
         "needed": [
           "libubase.so",
           "libddscxx.so.0",
@@ -382,7 +382,7 @@
         ]
       },
       "libuutils.so": {
-        "sha256": "850340aa0c74abe43f128d425b18a586049ebd95604c22cbffb9c1c778a20d0c",
+        "sha256": "df5129b6378a054c19d4b2011bd96651be5656fde8110daf83ad60af3b9d4b76",
         "needed": [
           "libz.so.1",
           "libssl.so.1.1",
@@ -575,7 +575,7 @@
         ]
       },
       "librobotMotionSdk.so": {
-        "sha256": "0b71ba8a5da725f543f1b0266dc41f6a389ca945e675ea9bd68a97c71b58194e",
+        "sha256": "c81a706605e0f9fcea290c996c37a904b51742b4521c6d4804665b9e913e8694",
         "needed": [
           "libmediaBus.so",
           "libudbus.so",
@@ -605,7 +605,7 @@
         ]
       },
       "libubase.so": {
-        "sha256": "cb3ca0130b8cb72cacb4c656016f97667ecd3e4563c6bc001cb318f36e6ac00d",
+        "sha256": "6d56791769e03544eb832e84e931f4658b21d5fcfc45134d47507741fd9e6f75",
         "needed": [
           "libstdc++.so.6",
           "libm.so.6",
@@ -793,7 +793,7 @@
         ]
       },
       "libmediaBus.so": {
-        "sha256": "59c7f33eac40add7f6e3ce72bb0c9120e494b2538bc1803554cda0c658f121a9",
+        "sha256": "41101619ac6adafd85aed96387b1c39a6fe9cf1ed9dab84f4879f47dccfc9ee7",
         "needed": [
           "libudbus.so",
           "libubase.so",
@@ -803,7 +803,7 @@
         ]
       },
       "librobotMotionSdk.so": {
-        "sha256": "f2f629af113747b00df6b2070ec64197d039da07bd8912cac26f6fe649a7a18b",
+        "sha256": "c49c4887772a966651dd0ce4ed9704c697afaf8d1d383b1ed01e96c5d84b35db",
         "needed": [
           "libmediaBus.so",
           "libudbus.so",
@@ -817,7 +817,7 @@
         ]
       },
       "libubase.so": {
-        "sha256": "6671d3ee76533ef2f816391bacfb0164bedd7dd595d9337415f67447e383d012",
+        "sha256": "74e38992d7f39e4581bab728d2fc353fed1562f8a57da22720d02f465a5fc992",
         "needed": [
           "libstdc++.so.6",
           "libm.so.6",
@@ -827,7 +827,7 @@
         ]
       },
       "libudbus.so": {
-        "sha256": "d05fe14b66833626d3e2819ec061cb5466b7f9dbb421d9013b52ae335e083a79",
+        "sha256": "5e573b6db52300e6b6a95d915890b6d4f45a259d94aba0eaec9718d87aa84f8f",
         "needed": [
           "libubase.so",
           "libddscxx.so.0",
@@ -839,7 +839,7 @@
         ]
       },
       "libuutils.so": {
-        "sha256": "ffd658e1b6106d67b34d1337317bae40ef52a59ace879f98bfd802c47f7d2ae9",
+        "sha256": "4bd7cded6e27a05390645433ecae63f89b6d6bd063700c5794068fe103e94549",
         "needed": [
           "libz.so.1",
           "libcrypto.so.1.1",
@@ -1012,7 +1012,7 @@
         ]
       },
       "librobotMotionSdk.so": {
-        "sha256": "b1975399c7c1cb0f3eccdf5d9d89d32250f409a098c02cac727b0417ae426041",
+        "sha256": "bac282408a31a5a8e3ab9e3070aac67bbaf2b088b63b3a7fc39d13e3d17ff5bb",
         "needed": [
           "libmediaBus.so",
           "libudbus.so",
@@ -1026,7 +1026,7 @@
         ]
       },
       "libubase.so": {
-        "sha256": "b5b73ad8f884de62b69c935fb30c4c675b0c84f020c06ab5e52d6498cbaa2558",
+        "sha256": "481e898f07cfb79dc59d92f145ad1faa03b2dc3742132548c02821b9ad7348bb",
         "needed": [
           "libstdc++.so.6",
           "libm.so.6",
@@ -1079,7 +1079,7 @@
   },
   "build_configuration": {
     "DEBUG": "no",
-    "ENABLE_MOCK_MODE": "ON; no conditional use in SDK dependency sources",
+    "ENABLE_MOCK_MODE": "OFF",
     "target": "robotMotionSdk (clean rebuild including mediaBus, ubase, udbus, uutils)",
     "platforms": {
       "aarch64": "nvidia_arm",
