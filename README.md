@@ -254,7 +254,7 @@ The following commands assume a native `build/` directory on the target machine.
 
 On-board High-level, Low-level, and MediaBus examples require root privileges on current devices; their commands use `sudo env LD_LIBRARY_PATH="$LD_LIBRARY_PATH"`. External Linux x86_64 High-level discovery and client commands run as a normal user with the already exported library path.
 
-When an external host is cabled straight into the robot Ethernet port, first lease an IP to the robot (see [Connect Peripherals](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/how-to/connect-peripherals.md)).
+**When an external host is cabled straight into the robot Ethernet port**, first lease an IP to the robot (see [Connect Peripherals](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/how-to/connect-peripherals.md)).
 
 ### High-level CLI: choose on-board or external Linux
 
@@ -315,7 +315,7 @@ highlevel> quit
 
 `odom` is part of the High-level CLI. Odometry is valid only while the robot is in the Walk action. `position` is already accumulated on the device; do not integrate it again in the application.
 
-When the external host is cabled straight into the robot Ethernet port, add `--dont-route` so only directly connected DDS locators are used. It is required when the robot Wi-Fi is also on (otherwise DDS may pick the unreachable Wi-Fi address) and optional otherwise:
+**When the external host is cabled straight into the robot Ethernet port**, add `--dont-route` so only directly connected DDS locators are used. It is required when the robot Wi-Fi is also on (otherwise DDS may pick the unreachable Wi-Fi address) and optional otherwise:
 
 ```bash
 ./build/examples/example_highlevel --iface "$UNIUBI_IFACE" --device-id "$UNIUBI_DEVICE_SN" --dont-route --read-only
