@@ -6,7 +6,7 @@ Uniubi 机器人 C++ 运动控制 SDK 的公开开发仓库，提供公开头文
 
 ## 机器人版本要求
 
-机器人软件版本要求：[Cyvet-V1.00.000](http://192.168.1.8/RobotRelease/System/littleDog/Release/dv500/Cyvet-V1.00.000)。
+机器人软件版本要求：Cyvet-V1.00.000-V1.00.001。
 
 ## 编译与安装
 
