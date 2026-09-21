@@ -235,3 +235,11 @@ NVIDIA APT 交叉包路径和 Orin 原生构建路径均已验证；SDK 仓库�
 ### NV21 与四路 PCM 采集
 
 使用 `--capture-all` 保存每路摄像头 5 张 NV21 图像和四路各 20 秒 PCM。配置模板、命令与验收方法：[NV21 与四路 PCM 采集](../docs/media-capture.zh-CN.md)。
+
+### 摄像头 IMU 元数据
+
+在 Orin 板内运行 `./build/examples/example_media_frames --imu-only 20`，从原始视频通道 0、1 获取摄像头 IMU 元数据。时长可省略，默认 20 秒，范围 1–60 秒。需要匹配的 SDK 运行库及提供 IMU 元数据的媒体服务；配置见[媒体配置说明](../docs/media-capture.zh-CN.md)。
+
+回调通过 `VideoFrame::getMetaData(mediaBufferMetaIMU, meta)` 获取数据，校验后将 `ImuFrameMetaHeader` 和 `ImuSample` 复制到独立缓冲区。校验包括头部大小、数组边界和重叠、状态、非空陀螺仪/加速度计样本及时间窗口。每路首个有效帧打印样本数量和首个 XYZ 读数，结束时输出有效帧与无效帧统计。这是摄像头 IMU，与运动控制 IMU 分开；样本保持固件原始单位，示例不应用 `rotation`，也不进行物理单位换算。
+
+该模式不写文件、不发送运动指令。两路均订阅成功、各收到至少一帧有效数据且没有无效帧时返回 0；初始化或参数错误返回 1，采集失败返回 2。缺失 IMU 元数据也计入无效帧。`--capture-all` 和原有位置参数模式保持原有行为。

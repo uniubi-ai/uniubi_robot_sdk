@@ -225,3 +225,11 @@ Audio examples: [example_audio.cpp](example_audio.cpp) (local capture) · [examp
 ### NV21 and four-channel PCM capture
 
 Use `--capture-all` to save five NV21 images per camera and four 20-second PCM files. Configuration template, commands and validation: [NV21 and four-channel PCM capture](../docs/media-capture.md).
+
+### Camera IMU metadata
+
+On the local Orin board, run `./build/examples/example_media_frames --imu-only 20` to parse camera IMU metadata from raw video channels 0 and 1. Duration is optional (default 20 seconds, range 1–60). Matching SDK runtime libraries and a media service that supplies IMU metadata are required; see the [media configuration](../docs/media-capture.md#configuration-template).
+
+The callback uses `VideoFrame::getMetaData(mediaBufferMetaIMU, meta)` and copies validated `ImuFrameMetaHeader` / `ImuSample` data into owned buffers. It checks header size, array bounds and overlap, status, nonempty gyro/accelerometer samples and the time window. The first valid frame per camera prints sample counts and the first XYZ readings; final summaries report parsed and invalid frames. This is camera IMU data, separate from the motion-control IMU. Values retain firmware units; the example does not apply `rotation` or convert physical units.
+
+This mode writes no files and sends no movement commands. Exit code 0 requires both subscriptions, at least one valid frame per camera and no invalid frames; setup/argument errors return 1 and capture failure returns 2. Missing IMU metadata also counts as invalid. `--capture-all` and the legacy positional mode retain their existing behavior.

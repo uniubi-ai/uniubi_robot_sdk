@@ -1,7 +1,7 @@
 /**
  * ========================================================
  *  @file example_media_frames.cpp
- *  @brief Motion SDK 媒体帧订阅示例：AudioFrame / VideoFrame / EncodedVideoFrame
+ *  @brief Motion SDK 媒体帧订阅示例：AudioFrame / VideoFrame / EncodedVideoFrame / 摄像头 IMU
  *  @note 仅支持 aarch64 板内本地部署；x86_64/i386 不调用 MediaBus client 接口。
  *  @copyright Copyright (c) 2026 UNIUBI All rights reserved.
  * ========================================================
@@ -43,6 +43,7 @@ struct Options {
     int32_t seconds = 10;
     std::string networkInterface;
     bool pcm4 = false;
+    bool imuOnly = false;
     std::string pcmDir;
 };
 
@@ -73,6 +74,12 @@ int32_t parseInt(const char* value, int32_t fallback) {
 
 Options parseArgs(int argc, char** argv) {
     Options options;
+    if (argc > 1 && std::string(argv[1]) == "--imu-only") {
+        options.imuOnly = true;
+        options.seconds = argc > 2 ? parseInt(argv[2], 0) : 20;
+        if (argc > 3) options.seconds = 0;
+        return options;
+    }
     if (argc > 1 && (std::string(argv[1]) == "--pcm4" || std::string(argv[1]) == "--capture-all")) {
         options.pcm4 = true;
         if (argc > 5) { options.seconds = 0; return options; }
@@ -108,6 +115,7 @@ Options parseArgs(int argc, char** argv) {
 void printUsage(const char* program) {
     std::printf("usage: %s [config|-] [client_id] [device_id|-] [video_channel] [audio_channel] [seconds] [network_iface|-]\n",
                 program);
+    std::printf("       %s --imu-only [seconds:1..60, default 20] (parse only, no files)\n", program);
     std::printf("       %s --pcm4 <new-output-dir> [seconds:1..60, default 20] [network_iface|-]\n", program);
     std::printf("       --capture-all (alias --pcm4): 5 NV21 images per camera and 4 PCM channels\n");
     std::printf("       media frame subscription is supported only on aarch64 local board deployment.\n");
@@ -650,6 +658,78 @@ bool capturePcm4(const IMediaBusClient::Ptr& media, const Options& options) {
     return success;
 }
 
+// 解析结果独立持有数据，不保存 VideoFrame 内部的元数据指针。
+struct ParsedImuFrame {
+    Uface::Media::ImuFrameMetaHeader header{};
+    std::vector<Uface::Media::ImuSample> gyro;
+    std::vector<Uface::Media::ImuSample> acc;
+};
+
+bool parseImuFrame(const uint8_t* data, size_t size, ParsedImuFrame& parsed) {
+    using Uface::Media::ImuSample;
+    auto& h = parsed.header;
+    if (!data || size < sizeof(h)) return false;
+    std::memcpy(&h, data, sizeof(h));
+    if (h.headerSize < sizeof(h) || h.totalSize < h.headerSize || h.totalSize > size) return false;
+    const auto valid = [&](uint32_t offset, uint32_t count) {
+        return count == 0 || (offset >= h.headerSize && offset <= h.totalSize &&
+               count <= (h.totalSize - offset) / sizeof(ImuSample));
+    };
+    if (!valid(h.gyroOffset, h.gyroCount) || !valid(h.accOffset, h.accCount)) return false;
+    if (h.gyroCount && h.accCount) {
+        const uint64_t gyroEnd = h.gyroOffset + uint64_t(h.gyroCount) * sizeof(ImuSample);
+        const uint64_t accEnd = h.accOffset + uint64_t(h.accCount) * sizeof(ImuSample);
+        if (h.gyroOffset < accEnd && h.accOffset < gyroEnd) return false;
+    }
+    // 使用 memcpy，避免元数据起始地址或样本偏移未对齐的问题。
+    parsed.gyro.resize(h.gyroCount);
+    parsed.acc.resize(h.accCount);
+    if (h.gyroCount) std::memcpy(parsed.gyro.data(), data + h.gyroOffset, parsed.gyro.size() * sizeof(ImuSample));
+    if (h.accCount) std::memcpy(parsed.acc.data(), data + h.accOffset, parsed.acc.size() * sizeof(ImuSample));
+    return true;
+}
+
+bool captureImu(const IMediaBusClient::Ptr& media, const Options& options) {
+    using namespace Uface::Media;
+    std::mutex mutex;
+    uint64_t valid[2] = {}, invalid[2] = {};
+    bool accepting = true, subscribed[2] = {};
+    for (int ch = 0; ch < 2; ++ch) {
+        subscribed[ch] = media->startRawVideoFrame(ch, [&, ch](int32_t channel, const VideoFrame& frame) {
+            std::lock_guard<std::mutex> lock(mutex);
+            if (!accepting) return;
+            MediaBufferMeta meta{};
+            ParsedImuFrame imu;
+            if (channel != ch || !frame.getMetaData(mediaBufferMetaIMU, meta) ||
+                meta.size > 1024 * 1024 || !parseImuFrame(meta.data, meta.size, imu)) {
+                ++invalid[ch]; return;
+            }
+            if (imu.header.status != imuFrameStatusOK || imu.gyro.empty() || imu.acc.empty() ||
+                !imu.header.framePtsUs || imu.header.windowBeginUs >= imu.header.windowEndUs) {
+                ++invalid[ch]; return;
+            }
+            // 在这里使用解析后的 header（含坐标系/rotation）、gyro 和 acc。
+            // 每个样本包含 ptsUs、x/y/z、temperature；数值保持固件原始单位，
+            // 不擅自应用旋转矩阵或进行物理单位换算。仅首帧打印示例，不写文件。
+            if (++valid[ch] == 1) {
+                const auto& gyro = imu.gyro.front();
+                const auto& acc = imu.acc.front();
+                std::printf("[imu] ch=%d pts=%llu gyro=%zu acc=%zu firstGyro=(%d,%d,%d) firstAcc=(%d,%d,%d)\n",
+                    ch, (unsigned long long)imu.header.framePtsUs, imu.gyro.size(), imu.acc.size(),
+                    gyro.x, gyro.y, gyro.z, acc.x, acc.y, acc.z);
+            }
+        });
+    }
+    if (subscribed[0] && subscribed[1]) std::this_thread::sleep_for(std::chrono::seconds(options.seconds));
+    { std::lock_guard<std::mutex> lock(mutex); accepting = false; }
+    for (int ch = 0; ch < 2; ++ch) if (subscribed[ch]) media->stopRawVideoFrame(ch);
+    media->shutdown(); // Stop callbacks before reporting and destroying captured state.
+    for (int ch = 0; ch < 2; ++ch)
+        std::printf("[imu] ch=%d parsed=%llu invalid=%llu\n", ch,
+            (unsigned long long)valid[ch], (unsigned long long)invalid[ch]);
+    return subscribed[0] && subscribed[1] && valid[0] && valid[1] && !invalid[0] && !invalid[1];
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
@@ -664,7 +744,12 @@ int main(int argc, char** argv) {
     std::fprintf(stderr, "media frames require an aarch64 local board\n");
     return 1;
 #endif
-    if (options.pcm4) {
+    if (options.imuOnly) {
+        if (options.seconds < 1 || options.seconds > 60) {
+            std::fprintf(stderr, "IMU parsing requires 1..60 seconds\n");
+            return 1;
+        }
+    } else if (options.pcm4) {
         if (options.pcmDir.empty() || options.seconds < 1 || options.seconds > 60 ||
             ::mkdir(options.pcmDir.c_str(), 0755) != 0) {
             std::fprintf(stderr, "capture requires 1..60 seconds and a new output directory\n");
@@ -732,8 +817,8 @@ int main(int argc, char** argv) {
                     layout.micNum, layout.cameraNum, layout.videoEncoderNum);
     }
 
-    if (options.pcm4) {
-        const bool success = capturePcm4(media, options);
+    if (options.pcm4 || options.imuOnly) {
+        const bool success = options.imuOnly ? captureImu(media, options) : capturePcm4(media, options);
         client->disconnect();
         service->shutdown();
         return success ? 0 : 2;
