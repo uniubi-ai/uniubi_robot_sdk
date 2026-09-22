@@ -124,11 +124,13 @@ if(BUILD_SDK_MEDIA_EXAMPLE)
     add_executable(example_media_frames example_media_frames.cpp)
     target_link_libraries(example_media_frames
         PRIVATE Uniubi::RobotMotionSdk Uniubi::MediaBus)
+    add_executable(example_media_frames_lowlevel example_media_frames_lowlevel.cpp)
+    target_link_libraries(example_media_frames_lowlevel PRIVATE Uniubi::RobotMotionSdk Uniubi::MediaBus)
     add_executable(example_audio example_audio.cpp)
     target_link_libraries(example_audio PRIVATE Uniubi::RobotMotionSdk Uniubi::MediaBus)
     add_executable(example_audio_rawback example_audio_rawback.cpp)
     target_link_libraries(example_audio_rawback PRIVATE Uniubi::RobotMotionSdk Uniubi::MediaBus)
-    list(APPEND UNIUBI_EXAMPLE_TARGETS example_media_frames example_audio example_audio_rawback)
+    list(APPEND UNIUBI_EXAMPLE_TARGETS example_media_frames example_media_frames_lowlevel example_audio example_audio_rawback)
 endif()
 
 # The prebuilt aarch64 SDK depends on libraries that are resolved on the Orin
