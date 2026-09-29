@@ -4,9 +4,12 @@
 
 The public development repository for the Uniubi Robot C++ motion-control SDK. It provides public headers, C++ examples, build entry points, and prebuilt runtime libraries for each supported architecture. The complete development workflow and API documentation are maintained in [`uniubi-docs`](https://github.com/uniubi-ai/uniubi-docs).
 
-## Robot Version Requirement
+## Firmware–SDK Compatibility
 
-Required robot software version: Cyvet-V1.00.000-V1.00.001.
+| Firmware version | SDK version |
+| --- | --- |
+| `Cyvet-V1.00.002` or newer | `main` |
+| Earlier than `Cyvet-V1.00.002` | tag `Cyvet-V1.00.001` |
 
 ## Build and Install
 
