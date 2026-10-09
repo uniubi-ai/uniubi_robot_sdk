@@ -92,10 +92,12 @@ public:
     virtual void setNetworkInterface(const char* iface) = 0;
     /**
      * @brief 设置网络相关配置（JSON，字段均可选；多设备/远端模式生效）
-     * @details 支持字段（未指定则保持默认，未知字段忽略）：
+     * @details 支持字段（未指定则保持当前值，未知字段忽略）：
      *          - "iface":      string，SDK 使用的网卡（如 "eth0"/"wlan0"），等价于 setNetworkInterface
      *          - "dont_route": bool，仅使用直连（同子网）链路收发 DDS，对应 CycloneDDS <DontRoute>；
      *                          开启后无法与经路由/跨三层的对端通信
+     *          - "peers":      string 数组，单播发现地址，可带端口；跨子网时指定机器狗可达地址。
+     *                          空数组清除已配置的 peers，不自动添加默认地址；跨子网时 dont_route 应为 false。
      *          必须在 initialService 之前调用。
      * @param configJson JSON 字符串，例如 {"iface":"eth0","dont_route":true}
      * @return 解析并应用成功返回 true；JSON 非法或调用时机不对返回 false
