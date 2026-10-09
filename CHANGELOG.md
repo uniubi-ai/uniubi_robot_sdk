@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Rebuild all four SDK runtime bundles with SPDP-only multicast and preferred on-link DDS locators; preserve routed-locator fallback when no on-link locator is available. Refresh runtime provenance, hashes, and validation records.
+
 - Rebuild all four SDK runtime bundles from robotservice master fb52731b and Build master 05a51e7; refresh runtime provenance and hashes.
 
 - Refresh aarch64_host third-party dependencies from Build da59f36 and rebuild the matched SDK runtime bundle.
