@@ -1,12 +1,26 @@
 {
-  "source_commit": "ec0bddc7dbc8b1f2f08bb1685a25a048fa92356f",
-  "source_branch": "debug/V1.00.001",
-  "build_commit": "fca6b90612049aad4b262294567f04ae74906870",
+  "source_commit": "fdda1f339134720bca877ae413c26ba4b05ac1a3",
+  "source_branch": "dev/cyclone_update",
+  "build_commit": "b21f05bf75c8ffc7e817bfafb72ccdbf7ef923af",
   "build_branch": "debug/V1.00.001",
   "source_pinned_build_commit": "a78699022bb5eef1973e84b9ce3c0d09cf641d86",
-  "public_header_commit": "eaedd9a909bbbcb2a1a2ea0fdd8100ea7d3daf78",
-  "retained_runtime_baseline": "856cc342259b2fc7b220c4890d030b9045f68857",
-  "source_notes": "Built from the source and Build commits listed above. libddsc was rebuilt from the source cyclone/dds tree and replaced in the Build dependency directory before rebuilding robotMotionSdk, mediaBus, ubase, udbus and uutils. Other runtime dependencies are retained from retained_runtime_baseline. No business-source or public-header overlay was applied. Subsequent delivery commits update SDK submodule pointers without changing these build inputs.",
+  "public_header_commit": "f726cfcc79d41cc2c0a43a24677e7f090486ef7c",
+  "retained_runtime_baseline": "dfe4ef3b9c38388825328c4d4de8aed1f24506a1",
+  "source_notes": "Complete DDS and SDK rebuild from an isolated source worktree and independent Build clone. DDS uses source-tree headers with standalone toolchains to avoid older installed DDS internal headers shadowing the updated source. The rebuilt ddsc replaces the Build dependency before robotMotionSdk, mediaBus, ubase, udbus and uutils are rebuilt. Build overlays select the updated public SDK and atomic Delegate header; there are no business-source overlays. Other dependencies retain the delivery baseline listed above. Delivered MotionSdkService.h contains additional documentation-only changes; its final hash is recorded below.",
+  "build_input_overlays": [
+    {
+      "path": "Sdk/cpp",
+      "pinned_commit": "dfe4ef3b9c38388825328c4d4de8aed1f24506a1",
+      "selected_commit": "f726cfcc79d41cc2c0a43a24677e7f090486ef7c",
+      "reason": "Updated network peers API documentation and atomic Delegate public header."
+    },
+    {
+      "path": "Include/UBase/Delegate.h",
+      "copied_from": "Sdk/cpp/include/uniubi/robot_sdk/UBase/Delegate.h",
+      "sha256": "85c03babb194edb0258f9e5bdf46c0f4726af059a0240fe19b73740a53e1f6f5",
+      "reason": "Compile the SDK and supporting libraries with the same atomic reference-count implementation as the public header."
+    }
+  ],
   "idl_sha256": {
     "BrainMotionState.idl": "8df0e9445ecfa6ef9b28c6ea73d85d7de8f500172c3e4c1e9e446a17876d7c28",
     "BrainSmartState.idl": "2f50d19812f90ac3403be83bb9722ecb30a98994d33209b8e69006801d5379ad",
@@ -81,9 +95,9 @@
     "uniubi/robot_sdk/MotionHighLevelClient.h": "19cd93843c09c274d9be201aa733fca71940c261ae3faa21ed23d613205a5456",
     "uniubi/robot_sdk/MotionLowLevelClient.h": "8cb823c410b6b1ceea346fb642112abdfd54f6952ad1a86174ad27bd14dfc561",
     "uniubi/robot_sdk/MotionSdkProtocol.h": "99f7ab552f3cbc5eb7c38af76da1c0220f354ce3c3ee102838d766574d6119bb",
-    "uniubi/robot_sdk/MotionSdkService.h": "470914e3e7a09c277bc6b2e421fc9c663f3fcf04f7a6090f5ed283d3e7f1da0e",
+    "uniubi/robot_sdk/MotionSdkService.h": "1473650f4d6b360df406c76cbbafee7fdf3482ed4a481af140dc672e040cb2d4",
     "uniubi/robot_sdk/UBase/Define.h": "5966ce785068d0c26cdaeed548fbf818d5913a99715685a437bad092a5a596cc",
-    "uniubi/robot_sdk/UBase/Delegate.h": "18c3a3a36f473d06ad4595e4952b7cc59a7ec5abec5569d50df65001a7a20af0"
+    "uniubi/robot_sdk/UBase/Delegate.h": "85c03babb194edb0258f9e5bdf46c0f4726af059a0240fe19b73740a53e1f6f5"
   },
   "libraries": {
     "aarch64": {
@@ -162,33 +176,36 @@
         "soname": "libcrypto.so.1.1"
       },
       "libddsc.so": {
-        "sha256": "a97888c79dbdb3d83c5ec420243c323fbbd76e9cf89371a7c8da90d54a05c268",
+        "sha256": "cc878e58b9b521d6eb90bc1ecb22ed4c0f3117d1343d1588df50f62223e635a0",
         "needed": [
           "libiceoryx_binding_c.so",
           "libc.so.6",
           "ld-linux-aarch64.so.1"
         ],
         "soname": "libddsc.so.0",
+        "rpath": "$ORIGIN/../lib",
         "symlink_target": "libddsc.so.0"
       },
       "libddsc.so.0": {
-        "sha256": "a97888c79dbdb3d83c5ec420243c323fbbd76e9cf89371a7c8da90d54a05c268",
+        "sha256": "cc878e58b9b521d6eb90bc1ecb22ed4c0f3117d1343d1588df50f62223e635a0",
         "needed": [
           "libiceoryx_binding_c.so",
           "libc.so.6",
           "ld-linux-aarch64.so.1"
         ],
         "soname": "libddsc.so.0",
+        "rpath": "$ORIGIN/../lib",
         "symlink_target": "libddsc.so.0.10.5"
       },
       "libddsc.so.0.10.5": {
-        "sha256": "a97888c79dbdb3d83c5ec420243c323fbbd76e9cf89371a7c8da90d54a05c268",
+        "sha256": "cc878e58b9b521d6eb90bc1ecb22ed4c0f3117d1343d1588df50f62223e635a0",
         "needed": [
           "libiceoryx_binding_c.so",
           "libc.so.6",
           "ld-linux-aarch64.so.1"
         ],
-        "soname": "libddsc.so.0"
+        "soname": "libddsc.so.0",
+        "rpath": "$ORIGIN/../lib"
       },
       "libddscxx.so": {
         "sha256": "7be80024f8ab6bcfdf0e464c3b3fa329e7d728407fefbdf26da3127cebc36c29",
@@ -283,7 +300,7 @@
         "soname": "libiceoryx_posh.so"
       },
       "libmediaBus.so": {
-        "sha256": "2d903df59cea86893c6e780ab499f7b5826e293256a0b52152e513b2cbdb3ec1",
+        "sha256": "12c27479c6340864385b8b892d3116ed6a0cf9cf211a127c680a0c567ba50176",
         "needed": [
           "libudbus.so",
           "libcuda.so.1",
@@ -320,7 +337,7 @@
         "soname": "libmediaBus.so"
       },
       "librobotMotionSdk.so": {
-        "sha256": "2bcfafa6fdfdd00a6fa5ba5788033410698ced8b30d5a5ab39daa07777ae65c0",
+        "sha256": "d77383d2c3bc72645902ba407a0043e19d9c0e7d585f9226cf6e4e50102ab7cc",
         "needed": [
           "libuutils.so",
           "libatomic.so.1",
@@ -384,7 +401,7 @@
         "soname": "libssl.so.1.1"
       },
       "libubase.so": {
-        "sha256": "2aa3bd869b15b4497007d99e4fb014d8008bc99a2eced0529127d73abdf6b8a1",
+        "sha256": "5be0ec90d379096fba9a8531cc1c6b928ff2cffbc6709e2f694e9e55fb989587",
         "needed": [
           "libstdc++.so.6",
           "libm.so.6",
@@ -395,7 +412,7 @@
         "soname": "libubase.so"
       },
       "libudbus.so": {
-        "sha256": "d56024b505ec0f4ae3384889c2be3d60afabd2b7cc265be8a00632605da2c532",
+        "sha256": "de41e523dc999c7248ee5fa764d2d5143d1e070d91fffe8b954a507d3450adc3",
         "needed": [
           "libubase.so",
           "libddscxx.so.0",
@@ -463,6 +480,7 @@
           "ld-linux-aarch64.so.1"
         ],
         "soname": "libacl.so.1",
+        "runpath": "/tmp/sdk_arm64_deps_x9xglrmk/prefix/lib",
         "symlink_target": "libacl.so.1.1.2302"
       },
       "libacl.so.1": {
@@ -472,6 +490,7 @@
           "ld-linux-aarch64.so.1"
         ],
         "soname": "libacl.so.1",
+        "runpath": "/tmp/sdk_arm64_deps_x9xglrmk/prefix/lib",
         "symlink_target": "libacl.so.1.1.2302"
       },
       "libacl.so.1.1.2302": {
@@ -480,7 +499,8 @@
           "libc.so.6",
           "ld-linux-aarch64.so.1"
         ],
-        "soname": "libacl.so.1"
+        "soname": "libacl.so.1",
+        "runpath": "/tmp/sdk_arm64_deps_x9xglrmk/prefix/lib"
       },
       "libattr.so": {
         "sha256": "18f1ea1ef0f9f2df91e67c6a93ea7fbb8b7350f9255a5d9a25cffc68df9c4858",
@@ -526,33 +546,36 @@
         "soname": "libcrypto.so.1.1"
       },
       "libddsc.so": {
-        "sha256": "621b27454a985b98711fb4509d6c76c8d23c8bbe9ab33f83e9b7ececbe4c2798",
+        "sha256": "440e4850723b468f68900bd10f073005037f5ed408157f47bd5a1eada3d88a9c",
         "needed": [
           "libiceoryx_binding_c.so",
           "libc.so.6",
           "ld-linux-aarch64.so.1"
         ],
         "soname": "libddsc.so.0",
+        "runpath": "$ORIGIN/../lib",
         "symlink_target": "libddsc.so.0"
       },
       "libddsc.so.0": {
-        "sha256": "621b27454a985b98711fb4509d6c76c8d23c8bbe9ab33f83e9b7ececbe4c2798",
+        "sha256": "440e4850723b468f68900bd10f073005037f5ed408157f47bd5a1eada3d88a9c",
         "needed": [
           "libiceoryx_binding_c.so",
           "libc.so.6",
           "ld-linux-aarch64.so.1"
         ],
         "soname": "libddsc.so.0",
+        "runpath": "$ORIGIN/../lib",
         "symlink_target": "libddsc.so.0.10.5"
       },
       "libddsc.so.0.10.5": {
-        "sha256": "621b27454a985b98711fb4509d6c76c8d23c8bbe9ab33f83e9b7ececbe4c2798",
+        "sha256": "440e4850723b468f68900bd10f073005037f5ed408157f47bd5a1eada3d88a9c",
         "needed": [
           "libiceoryx_binding_c.so",
           "libc.so.6",
           "ld-linux-aarch64.so.1"
         ],
-        "soname": "libddsc.so.0"
+        "soname": "libddsc.so.0",
+        "runpath": "$ORIGIN/../lib"
       },
       "libddscxx.so": {
         "sha256": "6044481a913d6c9ba5debd39f41f234321e2d7838bc2689a8e97c79470571c10",
@@ -598,7 +621,8 @@
           "libc.so.6",
           "ld-linux-aarch64.so.1"
         ],
-        "soname": "libiceoryx_binding_c.so"
+        "soname": "libiceoryx_binding_c.so",
+        "runpath": "/tmp/sdk_arm64_deps_x9xglrmk/prefix/lib"
       },
       "libiceoryx_hoofs.so": {
         "sha256": "808f7c77aa9b846c312f5f5b89e9df9b52f585c77460d24e224044440387263b",
@@ -610,14 +634,16 @@
           "libc.so.6",
           "ld-linux-aarch64.so.1"
         ],
-        "soname": "libiceoryx_hoofs.so"
+        "soname": "libiceoryx_hoofs.so",
+        "runpath": "/tmp/sdk_arm64_deps_x9xglrmk/prefix/lib"
       },
       "libiceoryx_platform.so": {
         "sha256": "c6ab37276a21e29cb219f2bf2c911f73d75362c9b0821829e1f2efd85b4d282a",
         "needed": [
           "libc.so.6"
         ],
-        "soname": "libiceoryx_platform.so"
+        "soname": "libiceoryx_platform.so",
+        "runpath": "/tmp/sdk_arm64_deps_x9xglrmk/prefix/lib"
       },
       "libiceoryx_posh.so": {
         "sha256": "d392558192e427b1788c96a1d1aa7b8385c5ab6c2ab05b824fe248a277872912",
@@ -627,10 +653,11 @@
           "libc.so.6",
           "ld-linux-aarch64.so.1"
         ],
-        "soname": "libiceoryx_posh.so"
+        "soname": "libiceoryx_posh.so",
+        "runpath": "/tmp/sdk_arm64_deps_x9xglrmk/prefix/lib"
       },
       "libmediaBus.so": {
-        "sha256": "2e67d599c0527601d27e5fb28abe7aecfd956f996a78a54ec9cdc9ffe6482bbd",
+        "sha256": "1d5e0649d076b794d133d49fb2fcf179d7de4bce26e9ae5b33b8e9afd9484f9c",
         "needed": [
           "libudbus.so",
           "libubase.so",
@@ -642,7 +669,7 @@
         "soname": "libmediaBus.so"
       },
       "librobotMotionSdk.so": {
-        "sha256": "8094397a2074a985b01c1a4797e60a811f4e12deb80bb02724314b9fac923696",
+        "sha256": "0c54f2ad1ee92f9711d2359fa0e52df800592974540f1a1d2cbda7443d12efc8",
         "needed": [
           "libmediaBus.so",
           "libudbus.so",
@@ -676,7 +703,7 @@
         "soname": "libssl.so.1.1"
       },
       "libubase.so": {
-        "sha256": "9bf402b1d64305ffaaa1e5ef232bf09924756b91d1e4d50c515c9595e246361b",
+        "sha256": "6e9df3d167bcd2ed677439d5508802e62bf2640c3a2af15b58c633e73a685962",
         "needed": [
           "libstdc++.so.6",
           "libm.so.6",
@@ -687,7 +714,7 @@
         "soname": "libubase.so"
       },
       "libudbus.so": {
-        "sha256": "ab640bef93dcfbe890c96718ad86106d548e1f6a5094ebf99b6c0900dec70ad0",
+        "sha256": "4a93909cd2ade6fa84246d66b40e459ec053783f58226f393ddb8a049928087c",
         "needed": [
           "libubase.so",
           "libddscxx.so.0",
@@ -745,6 +772,7 @@
           "libc.so.6"
         ],
         "soname": "libacl.so.1",
+        "runpath": "/home/fangqi/code/robot/robotservice/cyclone/install.x86_64/lib",
         "symlink_target": "libacl.so.1.1.2302"
       },
       "libacl.so.1": {
@@ -753,6 +781,7 @@
           "libc.so.6"
         ],
         "soname": "libacl.so.1",
+        "runpath": "/home/fangqi/code/robot/robotservice/cyclone/install.x86_64/lib",
         "symlink_target": "libacl.so.1.1.2302"
       },
       "libacl.so.1.1.2302": {
@@ -760,7 +789,8 @@
         "needed": [
           "libc.so.6"
         ],
-        "soname": "libacl.so.1"
+        "soname": "libacl.so.1",
+        "runpath": "/home/fangqi/code/robot/robotservice/cyclone/install.x86_64/lib"
       },
       "libattr.so": {
         "sha256": "251a0f88628a9f35cb4d6e63f12990182abf9ac4538b34d31ce0d87fdc8a4c82",
@@ -801,33 +831,36 @@
         "soname": "libcrypto.so.1.1"
       },
       "libddsc.so": {
-        "sha256": "b0495815771fb3e27609db1a03972726897d6a57a147af559f4bf11848690bb8",
+        "sha256": "9a59ec3e687922fddaa611b1538690aac989b78f452fd1c4e247f6a726702e51",
         "needed": [
           "libiceoryx_binding_c.so",
           "libc.so.6",
           "ld-linux-x86-64.so.2"
         ],
         "soname": "libddsc.so.0",
+        "runpath": "$ORIGIN/../lib",
         "symlink_target": "libddsc.so.0"
       },
       "libddsc.so.0": {
-        "sha256": "b0495815771fb3e27609db1a03972726897d6a57a147af559f4bf11848690bb8",
+        "sha256": "9a59ec3e687922fddaa611b1538690aac989b78f452fd1c4e247f6a726702e51",
         "needed": [
           "libiceoryx_binding_c.so",
           "libc.so.6",
           "ld-linux-x86-64.so.2"
         ],
         "soname": "libddsc.so.0",
+        "runpath": "$ORIGIN/../lib",
         "symlink_target": "libddsc.so.0.10.5"
       },
       "libddsc.so.0.10.5": {
-        "sha256": "b0495815771fb3e27609db1a03972726897d6a57a147af559f4bf11848690bb8",
+        "sha256": "9a59ec3e687922fddaa611b1538690aac989b78f452fd1c4e247f6a726702e51",
         "needed": [
           "libiceoryx_binding_c.so",
           "libc.so.6",
           "ld-linux-x86-64.so.2"
         ],
-        "soname": "libddsc.so.0"
+        "soname": "libddsc.so.0",
+        "runpath": "$ORIGIN/../lib"
       },
       "libddscxx.so": {
         "sha256": "9a80c2c102dd89163ea46240345c6cc88c980aa889d563ac70c0667e97b483a9",
@@ -869,7 +902,8 @@
           "libiceoryx_hoofs.so",
           "libc.so.6"
         ],
-        "soname": "libiceoryx_binding_c.so"
+        "soname": "libiceoryx_binding_c.so",
+        "runpath": "/home/fangqi/code/robot/robotservice/cyclone/install.x86_64/lib"
       },
       "libiceoryx_hoofs.so": {
         "sha256": "42103048d62dcddce5eb0b06d9f18389343bd6d367515cffd8cfd49b43d6b8e1",
@@ -880,14 +914,16 @@
           "libgcc_s.so.1",
           "libc.so.6"
         ],
-        "soname": "libiceoryx_hoofs.so"
+        "soname": "libiceoryx_hoofs.so",
+        "runpath": "/home/fangqi/code/robot/robotservice/cyclone/install.x86_64/lib"
       },
       "libiceoryx_platform.so": {
         "sha256": "5e60dbffb1a026a0eadb78db98d95b4414d056b46a682d9526ce7cfb39c06f57",
         "needed": [
           "libc.so.6"
         ],
-        "soname": "libiceoryx_platform.so"
+        "soname": "libiceoryx_platform.so",
+        "runpath": "/home/fangqi/code/robot/robotservice/cyclone/install.x86_64/lib"
       },
       "libiceoryx_posh.so": {
         "sha256": "558b7ee795cd0bf454b626d907468db8f258b8a848f2a2c067ae7c8c4334c6b5",
@@ -896,10 +932,11 @@
           "libstdc++.so.6",
           "libc.so.6"
         ],
-        "soname": "libiceoryx_posh.so"
+        "soname": "libiceoryx_posh.so",
+        "runpath": "/home/fangqi/code/robot/robotservice/cyclone/install.x86_64/lib"
       },
       "libmediaBus.so": {
-        "sha256": "bed3cdbabc908c2857c40714f824124606a512d43ea8363a245602ecc165d33c",
+        "sha256": "0cc56c5b3986b7cb731410e4764eed12878d68639f6da19e7c0c99e2af42bd97",
         "needed": [
           "libudbus.so",
           "libubase.so",
@@ -910,7 +947,7 @@
         "soname": "libmediaBus.so"
       },
       "librobotMotionSdk.so": {
-        "sha256": "eedf627bcc5920a25935f6ebdd8617a882a7d8fdf74eca75e8c04e1b5f54bd37",
+        "sha256": "d01105f70256aeae3cf0755a916d93962d4e3e73b3474d48e7f7704a8e5d9959",
         "needed": [
           "libmediaBus.so",
           "libudbus.so",
@@ -925,7 +962,7 @@
         "soname": "librobotMotionSdk.so"
       },
       "libubase.so": {
-        "sha256": "3da4b8b72bdfaef9c7189a49d7a7cc598efe0f0a5f0a4a69071f7a3d91b2a98a",
+        "sha256": "882edcb59dad267d01335a76f87bbfb1984350106cbf66a383d3138a2cacb6e3",
         "needed": [
           "libstdc++.so.6",
           "libm.so.6",
@@ -936,7 +973,7 @@
         "soname": "libubase.so"
       },
       "libudbus.so": {
-        "sha256": "21b05a1f37566188f8239fc7c52fee0ee940ce5f504e98a0e1330a488d4fddad",
+        "sha256": "8c70a4ed65ab9e6577e2110993f987d80a10f6e2fa47f9478a68c0a1da2c3ff8",
         "needed": [
           "libubase.so",
           "libddscxx.so.0",
@@ -990,6 +1027,7 @@
           "libc.so.6"
         ],
         "soname": "libacl.so.1",
+        "runpath": "/home/fangqi/code/robot/robotservice/cyclone/install.x86_32/lib",
         "symlink_target": "libacl.so.1.1.2302"
       },
       "libacl.so.1": {
@@ -998,6 +1036,7 @@
           "libc.so.6"
         ],
         "soname": "libacl.so.1",
+        "runpath": "/home/fangqi/code/robot/robotservice/cyclone/install.x86_32/lib",
         "symlink_target": "libacl.so.1.1.2302"
       },
       "libacl.so.1.1.2302": {
@@ -1005,7 +1044,8 @@
         "needed": [
           "libc.so.6"
         ],
-        "soname": "libacl.so.1"
+        "soname": "libacl.so.1",
+        "runpath": "/home/fangqi/code/robot/robotservice/cyclone/install.x86_32/lib"
       },
       "libattr.so": {
         "sha256": "60b60b31403c3451057594a46294189b147ad05369bfee7b49ca880a16e1b923",
@@ -1046,33 +1086,36 @@
         "soname": "libcrypto.so.1.1"
       },
       "libddsc.so": {
-        "sha256": "68c17fd631bbba1c49f1ec01debbea6c62dd948e545030e8efbbb5abadaf9956",
+        "sha256": "e60f6ba4d5e6aa0b4546ea5792707c576ad8124faff8a06c69345c409ee28d89",
         "needed": [
           "libiceoryx_binding_c.so",
           "libc.so.6",
           "ld-linux.so.2"
         ],
         "soname": "libddsc.so.0",
+        "runpath": "$ORIGIN/../lib",
         "symlink_target": "libddsc.so.0"
       },
       "libddsc.so.0": {
-        "sha256": "68c17fd631bbba1c49f1ec01debbea6c62dd948e545030e8efbbb5abadaf9956",
+        "sha256": "e60f6ba4d5e6aa0b4546ea5792707c576ad8124faff8a06c69345c409ee28d89",
         "needed": [
           "libiceoryx_binding_c.so",
           "libc.so.6",
           "ld-linux.so.2"
         ],
         "soname": "libddsc.so.0",
+        "runpath": "$ORIGIN/../lib",
         "symlink_target": "libddsc.so.0.10.5"
       },
       "libddsc.so.0.10.5": {
-        "sha256": "68c17fd631bbba1c49f1ec01debbea6c62dd948e545030e8efbbb5abadaf9956",
+        "sha256": "e60f6ba4d5e6aa0b4546ea5792707c576ad8124faff8a06c69345c409ee28d89",
         "needed": [
           "libiceoryx_binding_c.so",
           "libc.so.6",
           "ld-linux.so.2"
         ],
-        "soname": "libddsc.so.0"
+        "soname": "libddsc.so.0",
+        "runpath": "$ORIGIN/../lib"
       },
       "libddscxx.so": {
         "sha256": "bd854fc01963df98fa98a176991c424d5be8ec2c02ee7ed1a0b813d1fc0ec132",
@@ -1114,7 +1157,8 @@
           "libiceoryx_hoofs.so",
           "libc.so.6"
         ],
-        "soname": "libiceoryx_binding_c.so"
+        "soname": "libiceoryx_binding_c.so",
+        "runpath": "/home/fangqi/code/robot/robotservice/cyclone/install.x86_32/lib"
       },
       "libiceoryx_hoofs.so": {
         "sha256": "c2489e92534a5a41426710ae43b18d2494a1d54d4e0a066d58865f42507a538c",
@@ -1125,14 +1169,16 @@
           "libgcc_s.so.1",
           "libc.so.6"
         ],
-        "soname": "libiceoryx_hoofs.so"
+        "soname": "libiceoryx_hoofs.so",
+        "runpath": "/home/fangqi/code/robot/robotservice/cyclone/install.x86_32/lib"
       },
       "libiceoryx_platform.so": {
         "sha256": "592f213d6e5cc886d74859d8cdbe40c7fba813501e4a31ea9569fec6f4132629",
         "needed": [
           "libc.so.6"
         ],
-        "soname": "libiceoryx_platform.so"
+        "soname": "libiceoryx_platform.so",
+        "runpath": "/home/fangqi/code/robot/robotservice/cyclone/install.x86_32/lib"
       },
       "libiceoryx_posh.so": {
         "sha256": "ce26c98ecc2bf44d1f1e0b49e46c48df1f91af629751b712ecf933cec4b05f20",
@@ -1142,10 +1188,11 @@
           "libgcc_s.so.1",
           "libc.so.6"
         ],
-        "soname": "libiceoryx_posh.so"
+        "soname": "libiceoryx_posh.so",
+        "runpath": "/home/fangqi/code/robot/robotservice/cyclone/install.x86_32/lib"
       },
       "libmediaBus.so": {
-        "sha256": "8112c0216fdd49445cd357cb58cecc68e7b79ff0269c41546ebcec9a68fd504d",
+        "sha256": "58068cdc4f750591ebc83a76a174aa1cab89679be9034b1a908e043daaf98a82",
         "needed": [
           "libudbus.so",
           "libubase.so",
@@ -1156,7 +1203,7 @@
         "soname": "libmediaBus.so"
       },
       "librobotMotionSdk.so": {
-        "sha256": "8cf46f9f068581b2eaf2e749f7b8ddedb31be4e9d2784a21c64802bf90a70541",
+        "sha256": "94a89fab907ac3882484b2e89da922aec9a531d29f139533e718c228bf32336a",
         "needed": [
           "libmediaBus.so",
           "libudbus.so",
@@ -1171,7 +1218,7 @@
         "soname": "librobotMotionSdk.so"
       },
       "libubase.so": {
-        "sha256": "6c3c0aa6ff0e8286de906b014f2a7c1003b226dcb0e8af308a94464a175e4ddf",
+        "sha256": "fff015782af05491f96a8fd9f1dfbde2f9ef2b98d426ef04cb14f59086ba2708",
         "needed": [
           "libstdc++.so.6",
           "libm.so.6",
@@ -1182,7 +1229,7 @@
         "soname": "libubase.so"
       },
       "libudbus.so": {
-        "sha256": "6788e26b66b5b81922799a5535f404d6b58a4b52d8cfa886bf54aa8165efa752",
+        "sha256": "347df301820c86f62e251c59a3777d879b6f77ec6dd86f38f438b2fba3132519",
         "needed": [
           "libubase.so",
           "libddscxx.so.0",
@@ -1252,59 +1299,65 @@
       "version": "0.10.5",
       "ENABLE_SHM": "ON",
       "ENABLE_SSL": "OFF",
-      "ENABLE_SECURITY": "OFF"
+      "ENABLE_SECURITY": "OFF",
+      "CMAKE_BUILD_TYPE": "Release",
+      "CMAKE_C_FLAGS_RELEASE": "-O3 -DNDEBUG",
+      "ENABLE_LTO": "ON (supported with the standalone toolchains)",
+      "toolchain_scope": "Compiler, architecture flags and sysroot only; no Build installed-header include directories."
     },
     "platforms": {
       "aarch64": "nvidia_arm",
       "aarch64_host": "aarch64_host",
       "x86_64": "x86_64",
       "i386": "x86_32"
+    },
+    "toolchain_sha256": {
+      "aarch64": "f5af2198ce42df7a8af973623be17c4cdb0a6cf8ba1488a071186399f48ff84d",
+      "aarch64_host": "c75935f015f260bb7d5a5c541301dc367eb1b65edb661eea5572fe9fb9fba054",
+      "x86_64": "45541ae4e41c836ae4a6c67b3a16dae40e8f5b1d8ee71be046ce5bb2e3deab16",
+      "i386": "279df26c4c0c187bef790c9df6ce2c424aac8db68d82a2b9dd7826fe4ba27d40"
     }
   },
   "validation": {
+    "date": "2026-10-10",
     "cpp_examples": [
       "aarch64",
       "aarch64_host",
       "x86_64",
       "i386"
     ],
-    "public_headers": "All delivered header hashes match Build/Sdk/cpp at eaedd9a909bbbcb2a1a2ea0fdd8100ea7d3daf78; no API changes.",
-    "abi": "No removed public SDK exports or new GLIBC/GLIBCXX version requirements across four architectures. i386 udbus has compiler-generated weak STL symbol differences; full runtime relocation succeeds.",
-    "x86_64_runtime": "ldd -r passed with the delivered runtime directory, without missing dependencies or unresolved symbols.",
-    "i386_runtime": "ldd -r passed with the delivered runtime directory, without missing dependencies or unresolved symbols.",
-    "aarch64_runtime": "Public examples cross-linked with the NVIDIA toolchain; target-device loading and RPC not run.",
-    "aarch64_host_runtime": "Public examples cross-linked with the generic ARM64 toolchain; target-device loading and RPC not run.",
-    "python_native": "CPython 3.10 x86_64 rebuilt against this runtime; all 24 unit tests passed. The same native build was used for the read-only PC RPC checks.",
-    "python_wheel": "CPython 3.10 x86_64 wheel built, installed in an isolated environment and passed all 24 unit tests. Other Python ABIs and architectures were not rebuilt.",
-    "ros2": "Humble uniubi_media_driver rebuilt against the installed x86_64 SDK with RTSP disabled; 5 tests passed. No media hardware or ROS 2 motion-client/bridge runtime tests.",
-    "pc_read_only_rpc": {
-      "date": "2026-10-09",
-      "methods": [
-        "getMotionCapabilities",
-        "getSystemStatus",
-        "queryMotionState"
-      ],
-      "configurations": [
-        {
-          "mode": "default",
-          "passed": 9,
-          "total": 9
-        },
-        {
-          "mode": "routed",
-          "passed": 9,
-          "total": 9
-        },
-        {
-          "mode": "direct",
-          "passed": 9,
-          "total": 9
-        }
-      ],
-      "min_latency_ms": 32.92,
-      "max_latency_ms": 269.09,
-      "notes": "External x86_64 PC to an existing robot on the same LAN. Default automatic-interface configuration and explicit-interface configurations with DontRoute false/true each passed 9/9. Loaded DDS/SDK hashes matched this delivery. Empty motion-state objects count as successful responses under the SDK contract. No control acquisition, motion, or firmware deployment."
+    "public_headers": "Atomic Delegate header used by both the rebuild and delivered SDK matches f726cfc. Public API headers use that SDK revision; MotionSdkService.h has additional documentation-only changes. Final delivered hashes are recorded.",
+    "abi": "No removed dynamic exports and no new GLIBC/GLIBCXX version requirements in the six rebuilt library families across all four architectures, relative to retained_runtime_baseline.",
+    "x86_64_runtime": "All seven public examples linked; ldd -r passed for the SDK and all examples. Rebuilt DDS loaded successfully and completed a loopback-only explicit-peer domain/participant create/delete smoke test.",
+    "i386_runtime": "All seven public examples linked; ldd -r passed for the SDK and all examples. Rebuilt DDS loaded successfully and completed a loopback-only explicit-peer domain/participant create/delete smoke test.",
+    "aarch64_runtime": "All seven public examples cross-linked with the NVIDIA sysroot/toolchain. Target-device loading, RPC and media hardware were not tested.",
+    "aarch64_host_runtime": "All seven public examples cross-linked with the generic ARM64 toolchain. Target-device loading and RPC were not tested.",
+    "dds_regressions": {
+      "direct_discovery_release": {
+        "passed": 9,
+        "total": 9
+      },
+      "direct_discovery_debug": {
+        "passed": 9,
+        "total": 9
+      },
+      "optional_locator_filter_release": {
+        "passed": 1,
+        "total": 1
+      },
+      "scope": "Scoped discovery, cover expansion, TypeLookup, malformed types, pruning, SPDP scheduling, transmit-queue boundaries and optional locator filtering. These are isolated host tests; the SDK does not enable its optional exclusion filter."
     },
-    "routed_network": "Cross-subnet routing fallback was not exercised; the read-only RPC checks used a directly reachable robot."
+    "network_namespace_integration": "Not repeated for this delivery: root privileges are required and sudo -n true reported that a password is required. No host NIC configuration was changed.",
+    "python_native": "CPython 3.10 x86_64 rebuilt against the delivered runtime; 25/25 tests passed, including five real SDK loopback network-configuration scenarios.",
+    "python_wheel": {
+      "abi": "CPython 3.10 x86_64",
+      "passed": 25,
+      "total": 25,
+      "sha256": "4e46daeba81daa46c14063c7947651260738167b488e4eaa986cbcdae3e8e474",
+      "loaded_runtime": "/proc/self/maps confirmed that ddsc, mediaBus, robotMotionSdk, ubase and udbus loaded from the delivered runtime directory. Other Python ABIs and architectures were not rebuilt."
+    },
+    "ros2": "Not rebuilt or retested for this delivery; the previous delivery test results do not validate these new binaries.",
+    "pc_read_only_rpc": "Not repeated for this delivery; the previous delivery device RPC results do not validate these new binaries.",
+    "physical_robot": "No firmware deployment, real-device control acquisition, motion, media hardware or physical gait validation."
   }
 }

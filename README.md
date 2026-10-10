@@ -318,11 +318,29 @@ highlevel> quit
 
 `odom` is part of the High-level CLI. Odometry is valid only while the robot is in the Walk action. `position` is already accumulated on the device; do not integrate it again in the application.
 
-**When the external host is cabled straight into the robot Ethernet port**, add `--dont-route` so only directly connected DDS locators are used. It is required when the robot Wi-Fi is also on (otherwise DDS may pick the unreachable Wi-Fi address) and optional otherwise:
+### DDS network configuration
 
-```bash
-./build/examples/example_highlevel --iface "$UNIUBI_IFACE" --device-id "$UNIUBI_DEVICE_SN" --dont-route --read-only
+Ordinary Ethernet/Wi-Fi LANs use the default `AllowMulticast=true` and `dont_route=false`, without a robot IP or peers. Set `iface` to the client host's interface and select the robot by SN. The SDK generates its own XML; the ROS 2 `CYCLONEDDS_URI` workflow is not an SDK XML override entry point.
+
+For a dedicated direct link, configure the client interface as `172.29.140.2/24` (other unique valid addresses such as `.3` or `.4` are also possible; `.1` belongs to the robot, and `.0`/`.255` are invalid). A DDS-only direct link needs no gateway or DNS. Before initialization, set the unicast peer `172.29.140.1:17910` and `dont_route=false`, and check the configuration result. The current High-level CLI has no peers option; use the SDK API in your application:
+
+```cpp
+#include "uniubi/robot_sdk/MotionSdkService.h"
+#include <stdexcept>
+
+auto service = uniubi::RobotSdk::IMotionSdkService::instance();
+if (!service->setNetworkConfig(
+        R"({"iface":"eth0","dont_route":false,"peers":["172.29.140.1:17910"]})")) {
+    throw std::runtime_error("invalid SDK network configuration");
+}
+if (!service->initialService(nullptr, "network-example")) {
+    throw std::runtime_error("SDK initialization failed");
+}
 ```
+
+`peers: []` clears previously configured peers; omitting it retains them. Omitting `dont_route` also retains its previous value. Explicitly clear prior peers when returning to ordinary LAN discovery. Use `--dont-route` / `dont_route=true` only when communication through a gateway must be prohibited. It is not a dedicated direct-link switch and is no longer required merely because robot Wi-Fi is enabled. The SDK still generates `AllowMulticast=true`; its public JSON has no option to disable multicast. Peers are unicast discovery targets, not an access whitelist, and must not be CIDR ranges. `17910` is the current robot discovery unicast port, not the only data port.
+
+Previous hardware tests with `.2/.3/.4` used `DontRoute=true`; the new `dont_route=false` direct-link configuration still needs SDK/ROS 2 hardware regression. Cross-subnet or multicast-restricted configurations may use reachable unicast peers and `dont_route=false`, but require bidirectional routing, reachable advertised locators, and UDP access. These two hardware scenarios have not completed acceptance testing.
 
 ### High-level control validation
 

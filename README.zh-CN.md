@@ -257,7 +257,29 @@ SDK 内部的多设备能力不是另一种部署形态，而是用于支持外�
 
 当前设备上的板载 High-level、Low-level 和 MediaBus 示例需要 root 权限，命令使用 `sudo env LD_LIBRARY_PATH="$LD_LIBRARY_PATH"`；外部 Linux x86_64 High-level 发现与 client 命令使用已导出的运行库路径，以普通用户运行。
 
-**外部主机网线直连机器人网口时**，先在开发板上给机器人分配 IP（见[连接外设](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/how-to/connect-peripherals.zh-CN.md)）。
+### DDS 网络配置
+
+普通以太网/Wi-Fi 局域网使用默认 `AllowMulticast=true`、`dont_route=false`，不需要填写狗 IP 或 peers；`iface` 填客户端本机网卡，应用按 SN 选择机器人。SDK 自动生成 XML；不能把 ROS 2 的 `CYCLONEDDS_URI` 用法当作 SDK 的 XML 覆盖入口。
+
+专用直连时，将客户端网卡配置为 `172.29.140.2/24`（也可用不重复的 `.3`、`.4` 等有效地址；`.1` 为狗端，`.0`、`.255` 不可用），仅 DDS 直连不需要网关或 DNS。初始化前设置单播 peer `172.29.140.1:17910` 和 `dont_route=false`，并检查配置返回值。现有 High-level CLI 没有 peers 参数，需在应用中使用以下 SDK API：
+
+```cpp
+#include "uniubi/robot_sdk/MotionSdkService.h"
+#include <stdexcept>
+
+auto service = uniubi::RobotSdk::IMotionSdkService::instance();
+if (!service->setNetworkConfig(
+        R"({"iface":"eth0","dont_route":false,"peers":["172.29.140.1:17910"]})")) {
+    throw std::runtime_error("invalid SDK network configuration");
+}
+if (!service->initialService(nullptr, "network-example")) {
+    throw std::runtime_error("SDK initialization failed");
+}
+```
+
+`peers: []` 清除之前设置的 peers，省略则保留；`dont_route` 省略也保留之前的值。普通网络若曾设置 peers，应显式清除。`--dont-route` / `dont_route=true` 仅供确实需要禁止经网关通信的场景使用，不是专用直连开关，也不再因机器人 Wi-Fi 开启而要求设置。SDK 仍生成 `AllowMulticast=true`，公开 JSON 没有关闭组播的选项；peers 是单播发现目标，不是访问白名单，也不能填 CIDR。`17910` 是当前狗端发现单播端口，不是唯一的数据端口。
+
+此前 `.2/.3/.4` 真机测试使用 `DontRoute=true`；新版 `dont_route=false` 直连配置仍需按 D04/D05 补测。跨子网或组播受限时可以配置可达的单播 peers 和 `dont_route=false`，但还需双向路由、可达的 advertised locator 和 UDP 放行，这两类真机场景尚未完成验收。
 
 ### High-level CLI：选择板载或外部 Linux 运行
 
@@ -312,11 +334,7 @@ highlevel> quit
 
 `odom` 已合并到 High-level CLI。里程计只在机器人处于 Walk 动作期间有效；`position` 已由设备端累计，上层不要再次积分。
 
-**外部主机网线直连机器人网口时**，加 `--dont-route`，只使用直连网段的 DDS 地址。机器人 Wi-Fi 同时开启时必须加，否则 DDS 可能选中主机不可达的 Wi-Fi 地址；机器人 Wi-Fi 未开启时可加可不加：
-
-```bash
-./build/examples/example_highlevel --iface "$UNIUBI_IFACE" --device-id "$UNIUBI_DEVICE_SN" --dont-route --read-only
-```
+请按上面的 DDS 网络配置 API 设置专用直连。
 
 ### High-level 控制验证
 
