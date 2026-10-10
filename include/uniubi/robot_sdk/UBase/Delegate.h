@@ -2,6 +2,7 @@
 #define FRAMEWORK_INCLUDE_UBASE_DELEGATE_H
 
 #include <new>
+#include <atomic>
 #include <cstring>
 #include "Define.h"
 #include <type_traits>
@@ -18,7 +19,7 @@ struct MemberBinding {
         , method(method_) {
     }
 
-    int refs;
+    std::atomic<int> refs;
     X *object;
     Method method;
 };
@@ -28,7 +29,7 @@ struct Identity {
         : refs(1) {
     }
 
-    int refs;
+    std::atomic<int> refs;
 };
 
 template <class Functor>
@@ -52,7 +53,7 @@ struct OwnedFunctorBinding {
         }
     }
 
-    int refs;
+    std::atomic<int> refs;
     Identity *identity;
     Functor functor;
 };
