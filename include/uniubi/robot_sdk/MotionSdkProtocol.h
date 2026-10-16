@@ -267,9 +267,10 @@ struct MotionOdometry {
     float                  yaw = 0.0f;          /**< 累计偏航角,rad */
     float                  yawSpeed = 0.0f;     /**< 偏航角速度,rad/s */
     uint32_t               epoch = 0;           /**< 原点代次 */
+    uint64_t               stepCnt = 0;         /**< Walk 累计步数 */
 };
 
-static_assert(sizeof(MotionOdometry) == 40, "MotionOdometry size invalid");
+static_assert(sizeof(MotionOdometry) == 48, "MotionOdometry size invalid");
 
 struct SensorObserved {
     GPSFrame         gps;                       /**GPS*/
@@ -277,7 +278,7 @@ struct SensorObserved {
     MotionOdometry   odom;                      /**里程计*/
 };
 
-static_assert(sizeof(SensorObserved) == 80, "SensorObserved size invalid");
+static_assert(sizeof(SensorObserved) == 88, "SensorObserved size invalid");
 
 /**
  * @brief 低级运控操作指令
