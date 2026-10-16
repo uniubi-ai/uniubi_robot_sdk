@@ -9,12 +9,18 @@ components.
 The repository includes precompiled Linux shared libraries under `lib/aarch64/`,
 `lib/aarch64_host/`, `lib/i386/`, and `lib/x86_64/`. Symlinks may point to the versioned library files.
 
-The ARM64 external-host dependency binaries were synchronized from internal Build
-commit `da59f36bfa834755386d2e405a634c728e6bee48`, using its independent
-`3thparty/{cycdds,openssl,zlib}/Lib/aarch64_host/` directories. The five UniUbi
-libraries were rebuilt against those dependencies from main commit `094c7993`.
-This records delivery provenance; the component source/license verification items
-below remain unchanged.
+The current four-platform DDS and UniUbi libraries were rebuilt from robotservice
+commit `fdda1f339134720bca877ae413c26ba4b05ac1a3` and Build commit
+`b21f05bf75c8ffc7e817bfafb72ccdbf7ef923af`, with the public SDK at `f726cfc`
+and its atomic Delegate header applied to Build. DDS was built from the updated
+source tree before rebuilding the five UniUbi libraries. See
+`docs/runtime-manifest.json` for the full input overlays, hashes and validations.
+
+Other third-party binaries retain SDK baseline `dfe4ef3`. The ARM64 external-host
+dependencies originally came from internal Build commit
+`da59f36bfa834755386d2e405a634c728e6bee48`, using its independent
+`3thparty/{cycdds,openssl,zlib}/Lib/aarch64_host/` directories. This provenance
+record does not resolve the license/source-package verification items below.
 
 ## OpenSSL
 
@@ -31,8 +37,12 @@ below remain unchanged.
 - Identified version: 0.10.5 from library names.
 - License: Eclipse Public License 2.0 and Eclipse Distribution License 1.0, as
   used by Eclipse Cyclone DDS releases.
-- TODO: release blocker. Confirm the exact source revision, build provenance,
-  and whether any local modifications were applied before release.
+- The `libddsc` source is `cyclone/dds` in robotservice commit `fdda1f33`.
+  This is a locally modified 0.10.5 tree with scoped direct discovery, ingress
+  locator handling, SPDP scheduling, discovery pruning and robustness backports;
+  it is not an upstream version upgrade. `libddscxx` retains the baseline binary.
+- TODO: release blocker. Preserve the complete license notices and confirm the
+  upstream source-package provenance of the retained C++ binding before release.
 
 ## Eclipse iceoryx
 

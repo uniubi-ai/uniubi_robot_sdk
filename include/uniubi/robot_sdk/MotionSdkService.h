@@ -92,12 +92,16 @@ public:
     virtual void setNetworkInterface(const char* iface) = 0;
     /**
      * @brief 设置网络相关配置（JSON，字段均可选；多设备/远端模式生效）
-     * @details 支持字段（未指定则保持默认，未知字段忽略）：
+     * @details 支持字段（未指定则保持当前值，未知字段忽略）：
      *          - "iface":      string，SDK 使用的网卡（如 "eth0"/"wlan0"），等价于 setNetworkInterface
      *          - "dont_route": bool，仅使用直连（同子网）链路收发 DDS，对应 CycloneDDS <DontRoute>；
-     *                          开启后无法与经路由/跨三层的对端通信
-     *          必须在 initialService 之前调用。
-     * @param configJson JSON 字符串，例如 {"iface":"eth0","dont_route":true}
+     *                          默认 false，允许正常路由；true 禁止经网关通信，不是专用直连开关
+     *          - "peers":      string 数组，单播发现地址，可带端口；跨子网时指定机器狗可达地址。
+     *                          空数组清除已配置的 peers，省略则保留；不自动添加默认地址，不要填写 CIDR。
+     *          必须在 initialService 之前调用并检查返回值。普通局域网默认组播发现，无需 peers；
+     *          专用直连使用客户端 172.29.140.2/24、peer 172.29.140.1:17910 和 dont_route=false。
+     *          此新版直连配置仍需真机补测；SDK 自动 XML 不等于 CYCLONEDDS_URI 覆盖入口。
+     * @param configJson JSON 字符串，例如 {"iface":"eth0","dont_route":false,"peers":["172.29.140.1:17910"]}
      * @return 解析并应用成功返回 true；JSON 非法或调用时机不对返回 false
      */
     virtual bool setNetworkConfig(const char* configJson) = 0;
