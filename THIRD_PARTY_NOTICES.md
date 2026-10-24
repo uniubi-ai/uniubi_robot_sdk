@@ -10,13 +10,15 @@ The repository includes precompiled Linux shared libraries under `lib/aarch64/`,
 `lib/aarch64_host/`, `lib/i386/`, and `lib/x86_64/`. Symlinks may point to the versioned library files.
 
 The current four-platform DDS and UniUbi libraries were rebuilt from robotservice
-commit `fdda1f339134720bca877ae413c26ba4b05ac1a3` and Build commit
-`b21f05bf75c8ffc7e817bfafb72ccdbf7ef923af`, with the public SDK at `f726cfc`
-and its atomic Delegate header applied to Build. DDS was built from the updated
-source tree before rebuilding the five UniUbi libraries. See
-`docs/runtime-manifest.json` for the full input overlays, hashes and validations.
+master commit `6450481bf2e787d339d826be3480fdff667d7161` and its pinned Build
+commit `9b7cfe33625f2050bb489e811f982e294f63e0cc`, with public SDK main at
+`25793f14060c369a1a0e43a9e2fde34c924065d8`. That SDK tree is identical to the
+English-message rewrite `d7549d7`. No source or public-header overlays were
+required. DDS was rebuilt before the five UniUbi libraries. See
+`docs/runtime-manifest.json` for hashes, version requirements and validation scope.
 
-Other third-party binaries retain SDK baseline `dfe4ef3`. The ARM64 external-host
+Other third-party binaries retain SDK baseline `d7549d7` (unchanged from the
+previous runtime delivery). The ARM64 external-host
 dependencies originally came from internal Build commit
 `da59f36bfa834755386d2e405a634c728e6bee48`, using its independent
 `3thparty/{cycdds,openssl,zlib}/Lib/aarch64_host/` directories. This provenance
@@ -37,7 +39,7 @@ record does not resolve the license/source-package verification items below.
 - Identified version: 0.10.5 from library names.
 - License: Eclipse Public License 2.0 and Eclipse Distribution License 1.0, as
   used by Eclipse Cyclone DDS releases.
-- The `libddsc` source is `cyclone/dds` in robotservice commit `fdda1f33`.
+- The `libddsc` source is `cyclone/dds` in robotservice master commit `6450481b`.
   This is a locally modified 0.10.5 tree with scoped direct discovery, ingress
   locator handling, SPDP scheduling, discovery pruning and robustness backports;
   it is not an upstream version upgrade. `libddscxx` retains the baseline binary.

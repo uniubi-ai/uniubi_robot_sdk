@@ -8,8 +8,11 @@ Uniubi 机器人 C++ 运动控制 SDK 的公开开发仓库，提供公开头文
 
 | 固件版本 | SDK 版本 |
 | --- | --- |
-| `Cyvet-V1.00.002` 及以上 | `main` |
+| `Cyvet-V1.00.003` 及以上 | `main` |
+| `Cyvet-V1.00.002` | tag `Cyvet-V1.00.002` |
 | 低于 `Cyvet-V1.00.002` | tag `Cyvet-V1.00.001` |
+
+编译或安装前，请按机器人固件版本选择 SDK。使用 Python 时，C++ 与 Python SDK 应选择同名版本 tag；升级时同步更新 SDK 运行库和应用/Python 包。下文示例默认使用 `main`；使用 `Cyvet-V1.00.002` 固件时，请在克隆后执行 `git checkout Cyvet-V1.00.002`。
 
 ## 编译与安装
 

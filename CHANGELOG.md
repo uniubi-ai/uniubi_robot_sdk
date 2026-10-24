@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Rebuild all four runtime bundles from robotservice master `6450481b`, its pinned Build `9b7cfe3`, and public SDK main `25793f1` (tree-equivalent to the English-message rewrite `d7549d7`). Refresh the six rebuilt library families and current validation/provenance records.
+- Update version compatibility: firmware `Cyvet-V1.00.003` and newer uses `main`; firmware `Cyvet-V1.00.002` uses SDK tag `Cyvet-V1.00.002`; earlier firmware uses SDK tag `Cyvet-V1.00.001`. Upgrade the runtime libraries and application/Python package together.
+
 - Rebuild all four runtime bundles from robotservice `fdda1f33` and Build `b21f05b`. Update CycloneDDS scoped discovery, scheduling, pruning and robustness fixes; restore default multicast (`AllowMulticast=true`) and support explicit unicast peers. Refresh build provenance and validation records.
 
 - Separately rebuild SDK components with atomic Delegate reference counts from public SDK `f726cfc`; this concurrency fix is not supplied by replacing DDS alone.

@@ -8,8 +8,11 @@ The public development repository for the Uniubi Robot C++ motion-control SDK. I
 
 | Firmware version | SDK version |
 | --- | --- |
-| `Cyvet-V1.00.002` or newer | `main` |
+| `Cyvet-V1.00.003` or newer | `main` |
+| `Cyvet-V1.00.002` | tag `Cyvet-V1.00.002` |
 | Earlier than `Cyvet-V1.00.002` | tag `Cyvet-V1.00.001` |
+
+Select the SDK version for your robot firmware before building or installing. When using Python, select the same release tag in the C++ and Python SDK repositories. Upgrade the SDK runtime libraries and the application/Python package together. The examples below use `main`; for firmware `Cyvet-V1.00.002`, run `git checkout Cyvet-V1.00.002` after cloning.
 
 ## Build and Install
 
